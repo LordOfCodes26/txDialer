@@ -68,22 +68,29 @@ class CallService : InCallService() {
     override fun onCallRemoved(call: Call) {
         super.onCallRemoved(call)
         call.unregisterCallback(callListener)
-//        callNotificationManager.cancelNotification()
         val wasPrimaryCall = call == CallManager.getPrimaryCall()
         CallManager.onCallRemoved(call)
         EventBus.getDefault().post(Events.RefreshCallLog)
-        if (CallManager.getPhoneState() == NoCall) {
-            CallManager.inCallService = null
-            callNotificationManager.cancelNotification()
-        } else {
-            callNotificationManager.setupNotification()
-            if (wasPrimaryCall) {
-                startActivity(CallActivity.getStartIntent(this))
+
+        // Only start CallActivity if a redial is NOT pending
+        if (CallManager.pendingRedialHandle == null) {
+            if (CallManager.getPhoneState() == NoCall) {
+                CallManager.inCallService = null
+                callNotificationManager.cancelNotification()
+            } else {
+                callNotificationManager.setupNotification()
+                if (wasPrimaryCall) {
+                    startActivity(CallActivity.getStartIntent(this))
+                }
             }
+        } else {
+            // A redial is pending → let CallManager handle starting the new call
+            callNotificationManager.setupNotification()
         }
 
         if (config.flashForAlerts) MyCameraImpl.newInstance(this).stopSOS()
     }
+
 
     override fun onCallAudioStateChanged(audioState: CallAudioState?) {
         super.onCallAudioStateChanged(audioState)

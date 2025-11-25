@@ -1,6 +1,8 @@
 package com.goodwy.dialer.helpers
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.os.Handler
 import android.telecom.Call
 import android.telecom.CallAudioState
@@ -9,6 +11,7 @@ import android.telecom.VideoProfile
 import com.goodwy.dialer.extensions.getStateCompat
 import com.goodwy.dialer.extensions.hasCapability
 import com.goodwy.dialer.extensions.isConference
+import com.goodwy.dialer.extensions.isOutgoing
 import com.goodwy.dialer.models.AudioRoute
 import java.util.concurrent.CopyOnWriteArraySet
 
@@ -20,33 +23,74 @@ class CallManager {
         private var call: Call? = null
         private val calls = mutableListOf<Call>()
         private val listeners = CopyOnWriteArraySet<CallManagerListener>()
+        // Store the last outgoing number
+        private var lastOutgoingHandle: Uri? = null
 
+        // Store a pending redial handle if disconnecting a call
+        public var pendingRedialHandle: Uri? = null
+        /** Called when a call is added */
         fun onCallAdded(call: Call) {
             this.call = call
             calls.add(call)
-            for (listener in listeners) {
-                listener.onPrimaryCallChanged(call)
+
+            // Track outgoing number
+            if (call.isOutgoing()) {
+                lastOutgoingHandle = call.details.handle
             }
+
+            for (listener in listeners) listener.onPrimaryCallChanged(call)
+
             call.registerCallback(object : Call.Callback() {
-                override fun onStateChanged(call: Call, state: Int) {
-                    updateState()
-                }
-
-                override fun onDetailsChanged(call: Call, details: Call.Details) {
-                    updateState()
-                }
-
-                override fun onConferenceableCallsChanged(call: Call, conferenceableCalls: MutableList<Call>) {
-                    updateState()
-                }
+                override fun onStateChanged(call: Call, state: Int) { updateState() }
+                override fun onDetailsChanged(call: Call, details: Call.Details) { updateState() }
+                override fun onConferenceableCallsChanged(call: Call, conferenceableCalls: MutableList<Call>) { updateState() }
             })
         }
 
+
+        /** Called when a call is removed */
         fun onCallRemoved(call: Call) {
+            val wasPrimaryCall = call == getPrimaryCall()
             calls.remove(call)
+            if (pendingRedialHandle != null && call.details.handle == pendingRedialHandle) {
+                // Previous outgoing call fully removed → place the new call
+                placeCall(pendingRedialHandle!!)
+                pendingRedialHandle = null
+            }
             updateState()
+            for (listener in listeners) listener.onStateChanged()
         }
 
+        /** Redial the current outgoing call or last outgoing number */
+        fun redial() {
+            val outgoingCall = calls.find {
+                it.getStateCompat() == Call.STATE_DIALING || it.getStateCompat() == Call.STATE_CONNECTING
+            }
+
+            val handle = outgoingCall?.details?.handle ?: lastOutgoingHandle ?: return
+
+            if (outgoingCall != null) {
+                // Disconnect current outgoing call and mark pending redial
+                pendingRedialHandle = handle
+                outgoingCall.disconnect()
+            } else {
+                // No call in progress → place the call immediately
+                placeCall(handle)
+            }
+        }
+
+        /** Helper: place a new outgoing call */
+        private fun placeCall(handle: Uri) {
+            try {
+                val intent = Intent(Intent.ACTION_CALL).apply {
+                    data = handle
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                inCallService?.startActivity(intent)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
         fun onAudioStateChanged(audioState: CallAudioState) {
             val route = AudioRoute.fromRoute(audioState.route) ?: return
             for (listener in listeners) {
