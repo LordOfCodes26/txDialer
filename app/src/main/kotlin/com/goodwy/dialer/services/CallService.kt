@@ -1,14 +1,19 @@
 package com.goodwy.dialer.services
 
+import android.Manifest
 import android.telecom.CallAudioState
 import android.telecom.Call
 import android.telecom.InCallService
+import android.telecom.PhoneAccountHandle
+import android.telephony.SubscriptionManager
+import androidx.annotation.RequiresPermission
 import com.goodwy.dialer.activities.CallActivity
 import com.goodwy.dialer.extensions.config
 import com.goodwy.dialer.extensions.isOutgoing
 import com.goodwy.dialer.extensions.powerManager
 import com.goodwy.dialer.helpers.*
 import com.goodwy.dialer.models.Events
+import com.goodwy.dialer.sim.SimStateManager
 import org.greenrobot.eventbus.EventBus
 
 class CallService : InCallService() {
@@ -42,6 +47,7 @@ class CallService : InCallService() {
                     callNotificationManager.setupNotification()
                 }
             }
+
             call.isOutgoing() -> {
                 try {
                     startActivity(CallActivity.getStartIntent(this, needSelectSIM = call.details.accountHandle == null))
@@ -51,6 +57,7 @@ class CallService : InCallService() {
                     callNotificationManager.setupNotification()
                 }
             }
+
             config.showIncomingCallsFullScreen /*&& getPhoneSize() < 2*/ -> {
                 try {
                     startActivity(CallActivity.getStartIntent(this))
@@ -60,19 +67,36 @@ class CallService : InCallService() {
                     callNotificationManager.setupNotification()
                 }
             }
+
             else -> callNotificationManager.setupNotification()
         }
         if (!call.isOutgoing() && !powerManager.isInteractive && config.flashForAlerts) MyCameraImpl.newInstance(this).toggleSOS()
     }
 
+    @RequiresPermission(Manifest.permission.READ_PHONE_STATE)
     override fun onCallRemoved(call: Call) {
         super.onCallRemoved(call)
         call.unregisterCallback(callListener)
+
+        // get the slot index from accountHandle (do in service because we have Context)
+        val slotIndex = getSlotIndexFromHandle(call.details.accountHandle)
+
+        // compute minutes used (rounded up)
+        val connectTime = call.details.connectTimeMillis
+        val minutesUsed = if (connectTime > 0) {
+            (((System.currentTimeMillis() - connectTime) + 59_999) / 60_000).toInt()
+        } else 0
+
+        if (slotIndex >= 0 && minutesUsed > 0) {
+            SimStateManager.addUsedMinutes(slotIndex, minutesUsed)
+            // optionally persist right away
+            SimStateManager.saveAll(this)
+        }
+
         val wasPrimaryCall = call == CallManager.getPrimaryCall()
         CallManager.onCallRemoved(call)
         EventBus.getDefault().post(Events.RefreshCallLog)
 
-        // Only start CallActivity if a redial is NOT pending
         if (CallManager.pendingRedialHandle == null) {
             if (CallManager.getPhoneState() == NoCall) {
                 CallManager.inCallService = null
@@ -84,7 +108,6 @@ class CallService : InCallService() {
                 }
             }
         } else {
-            // A redial is pending → let CallManager handle starting the new call
             callNotificationManager.setupNotification()
         }
 
@@ -92,12 +115,33 @@ class CallService : InCallService() {
     }
 
 
+
+    @Deprecated("Deprecated in Java")
     override fun onCallAudioStateChanged(audioState: CallAudioState?) {
         super.onCallAudioStateChanged(audioState)
         if (audioState != null) {
             CallManager.onAudioStateChanged(audioState)
         }
     }
+
+    @RequiresPermission(Manifest.permission.READ_PHONE_STATE)
+    private fun getSlotIndexFromHandle(handle: PhoneAccountHandle?): Int {
+        if (handle == null) return -1
+        val sm = getSystemService(SubscriptionManager::class.java) ?: return -1
+        val list = sm.activeSubscriptionInfoList ?: return -1
+        for (info in list) {
+            // match by subscriptionId string, iccid or label - OEMs differ
+            if (info.subscriptionId.toString() == handle.id || info.iccId == handle.id) {
+                return info.simSlotIndex
+            }
+        }
+        // fallback: try matching by carrier name
+        for (info in list) {
+            if (info.carrierName?.toString() == handle.id) return info.simSlotIndex
+        }
+        return -1
+    }
+
 
     override fun onDestroy() {
         super.onDestroy()

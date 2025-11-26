@@ -25,6 +25,9 @@
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
 
     <uses-permission
         android:name="android.permission.USE_FINGERPRINT"
@@ -315,6 +318,32 @@
             android:name=".receivers.CallActionReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <receiver
+            android:name=".receivers.SimChangeReceiver"
+            android:exported="true"
+            android:permission="android.permission.READ_PRIVILEGED_PHONE_STATE">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SIM_STATE_CHANGED" />
+                <action android:name="android.telephony.action.SIM_CARD_STATE_CHANGED" />
+                <action android:name="android.telephony.action.SIM_APPLICATION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+
+        <receiver
+            android:name=".receivers.SMSReceiver"
+            android:exported="true"
+            android:permission="android.permission.READ_PRIVILEGED_PHONE_STATE">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SIM_STATE_CHANGED" />
+                <action android:name="android.telephony.action.SIM_CARD_STATE_CHANGED" />
+                <action android:name="android.telephony.action.SIM_APPLICATION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
 
         <receiver
             android:name=".receivers.MissedCallReceiver"
