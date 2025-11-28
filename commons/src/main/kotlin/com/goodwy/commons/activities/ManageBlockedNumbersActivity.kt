@@ -102,7 +102,7 @@ class ManageBlockedNumbersActivity : BaseSimpleActivity() {
             val isBlockingType by config.isBlockingType.collectAsStateWithLifecycle(initialValue = config.blockingType)
             val isBlockingEnabled by config.isBlockingEnabled.collectAsStateWithLifecycle(initialValue = config.blockingEnabled)
             val isDialer = remember {
-                config.appId.startsWith("com.goodwy.dialer")
+                config.appId.startsWith("com.android.dialer")
             }
             val isDefaultDialer: Boolean = onEventValue {
                 context.isDefaultDialer()
@@ -271,7 +271,7 @@ class ManageBlockedNumbersActivity : BaseSimpleActivity() {
     }
 
     private fun maybeSetDefaultCallerIdApp() {
-        if (isQPlus() && baseConfig.appId.startsWith("com.goodwy.dialer")) {
+        if (isQPlus() && baseConfig.appId.startsWith("com.android.dialer")) {
             setDefaultCallerIdApp()
         }
     }

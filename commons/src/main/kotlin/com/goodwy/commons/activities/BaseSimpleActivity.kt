@@ -112,19 +112,19 @@ abstract class BaseSimpleActivity : AppCompatActivity() {
 
         if (isAutoTheme()) changeAutoTheme()
 
-        if (!packageName.startsWith("com.goodwy.", true)) {
-            if ((0..50).random() == 10 || baseConfig.appRunCount % 100 == 0) {
-                val label = "You are using a fake version of the app. For your own safety download the original one from play.google.com. Thanks"
-                ConfirmationDialog(
-                    activity = this,
-                    message = label,
-                    positive = R.string.ok,
-                    negative = 0
-                ) {
-                    launchMoreAppsFromUsIntent()
-                }
-            }
-        }
+//        if (!packageName.startsWith("com.goodwy.", true)) {
+//            if ((0..50).random() == 10 || baseConfig.appRunCount % 100 == 0) {
+//                val label = "You are using a fake version of the app. For your own safety download the original one from play.google.com. Thanks"
+//                ConfirmationDialog(
+//                    activity = this,
+//                    message = label,
+//                    positive = R.string.ok,
+//                    negative = 0
+//                ) {
+//                    launchMoreAppsFromUsIntent()
+//                }
+//            }
+//        }
 
         if (baseConfig.needInit) {
             lifecycleScope.launch {

@@ -171,7 +171,7 @@
         layout="@layout/top_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_behavior="com.goodwy.dialer.helpers.CallHistoryTopBehavior"/>
+        app:layout_behavior="com.android.dialer.helpers.CallHistoryTopBehavior"/>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/callHistoryScrollview"
