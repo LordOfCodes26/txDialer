@@ -218,70 +218,70 @@ class SettingsDialpadActivity : SimpleActivity() {
 
         invalidateOptionsMenu()
 
-        if (isPlayStoreInstalled()) {
-            //PlayStore
-            purchaseHelper.initBillingClient()
-            val iapList: ArrayList<String> = arrayListOf(productIdX1, productIdX2, productIdX3)
-            val subList: ArrayList<String> = arrayListOf(
-                subscriptionIdX1, subscriptionIdX2, subscriptionIdX3,
-                subscriptionYearIdX1, subscriptionYearIdX2, subscriptionYearIdX3
-            )
-            purchaseHelper.retrieveDonation(iapList, subList)
-
-            purchaseHelper.isIapPurchased.observe(this) {
-                when (it) {
-                    is Tipping.Succeeded -> {
-                        config.isPro = true
-                        updatePro()
-                    }
-                    is Tipping.NoTips -> {
-                        config.isPro = false
-                        updatePro()
-                    }
-                    is Tipping.FailedToLoad -> {
-                    }
-                }
-            }
-
-            purchaseHelper.isSupPurchased.observe(this) {
-                when (it) {
-                    is Tipping.Succeeded -> {
-                        config.isProSubs = true
-                        updatePro()
-                    }
-                    is Tipping.NoTips -> {
-                        config.isProSubs = false
-                        updatePro()
-                    }
-                    is Tipping.FailedToLoad -> {
-                    }
-                }
-            }
-        }
-        if (isRuStoreInstalled()) {
-            //RuStore
-            ruStoreHelper!!.checkPurchasesAvailability(this@SettingsDialpadActivity)
-
-            lifecycleScope.launch {
-                ruStoreHelper!!.eventStart
-                    .flowWithLifecycle(lifecycle)
-                    .collect { event ->
-                        handleEventStart(event)
-                    }
-            }
-
-            lifecycleScope.launch {
-                ruStoreHelper!!.statePurchased
-                    .flowWithLifecycle(lifecycle)
-                    .collect { state ->
-                        //update of purchased
-                        if (!state.isLoading && ruStoreIsConnected) {
-                            baseConfig.isProRuStore = state.purchases.firstOrNull() != null
-                            updatePro()
-                        }
-                    }
-            }
-        }
+//        if (isPlayStoreInstalled()) {
+//            //PlayStore
+//            purchaseHelper.initBillingClient()
+//            val iapList: ArrayList<String> = arrayListOf(productIdX1, productIdX2, productIdX3)
+//            val subList: ArrayList<String> = arrayListOf(
+//                subscriptionIdX1, subscriptionIdX2, subscriptionIdX3,
+//                subscriptionYearIdX1, subscriptionYearIdX2, subscriptionYearIdX3
+//            )
+//            purchaseHelper.retrieveDonation(iapList, subList)
+//
+//            purchaseHelper.isIapPurchased.observe(this) {
+//                when (it) {
+//                    is Tipping.Succeeded -> {
+//                        config.isPro = true
+//                        updatePro()
+//                    }
+//                    is Tipping.NoTips -> {
+//                        config.isPro = false
+//                        updatePro()
+//                    }
+//                    is Tipping.FailedToLoad -> {
+//                    }
+//                }
+//            }
+//
+//            purchaseHelper.isSupPurchased.observe(this) {
+//                when (it) {
+//                    is Tipping.Succeeded -> {
+//                        config.isProSubs = true
+//                        updatePro()
+//                    }
+//                    is Tipping.NoTips -> {
+//                        config.isProSubs = false
+//                        updatePro()
+//                    }
+//                    is Tipping.FailedToLoad -> {
+//                    }
+//                }
+//            }
+//        }
+//        if (isRuStoreInstalled()) {
+//            //RuStore
+//            ruStoreHelper!!.checkPurchasesAvailability(this@SettingsDialpadActivity)
+//
+//            lifecycleScope.launch {
+//                ruStoreHelper!!.eventStart
+//                    .flowWithLifecycle(lifecycle)
+//                    .collect { event ->
+//                        handleEventStart(event)
+//                    }
+//            }
+//
+//            lifecycleScope.launch {
+//                ruStoreHelper!!.statePurchased
+//                    .flowWithLifecycle(lifecycle)
+//                    .collect { state ->
+//                        //update of purchased
+//                        if (!state.isLoading && ruStoreIsConnected) {
+//                            baseConfig.isProRuStore = state.purchases.firstOrNull() != null
+//                            updatePro()
+//                        }
+//                    }
+//            }
+//        }
     }
 
     override fun onRestart() {
@@ -1069,7 +1069,7 @@ class SettingsDialpadActivity : SimpleActivity() {
                         updateDialpadBottomMargin()
                         showDialpad()
                     } else {
-                        shakePurchase()
+//                        shakePurchase()
 
                         RxAnimation.from(binding.styleHolder)
                             .shake(shakeTranslation = 2f)
@@ -1180,7 +1180,7 @@ class SettingsDialpadActivity : SimpleActivity() {
                     settingsSimCardColor2Holder
                 ).forEach {
                     it.setOnClickListener { view ->
-                        shakePurchase()
+//                        shakePurchase()
 
                         RxAnimation.from(view)
                             .shake(shakeTranslation = 2f)
@@ -1304,9 +1304,10 @@ class SettingsDialpadActivity : SimpleActivity() {
                 RadioItem(SECONDARY_LANGUAGE_SYSTEM_ID, getString(R.string.auto_theme))
             )
             val supportedLanguages = DialpadT9.getSupportedSecondaryLanguages()
-            for (i in supportedLanguages.indices) {
-                items.add(RadioItem(i, getLanguageName(supportedLanguages[i])!!))
-            }
+//            for (i in supportedLanguages.indices) {
+//                items.add(RadioItem(i, getLanguageName(supportedLanguages[i])!!))
+//            }
+            //TODO: add korean letters
             val checkedItemId = if (config.dialpadSecondaryLanguage == LANGUAGE_SYSTEM) SECONDARY_LANGUAGE_SYSTEM_ID else supportedLanguages.indexOf(config.dialpadSecondaryLanguage)
 
             RadioGroupDialog(this@SettingsDialpadActivity, items, checkedItemId, R.string.secondary_dialpad_language) {
@@ -1463,24 +1464,24 @@ class SettingsDialpadActivity : SimpleActivity() {
     }
 
 
-    private fun updatePro(isPro: Boolean = checkPro()) {
-        binding.apply {
-            dialpadPurchaseThankYouHolder.beGoneIf(isPro)
+//    private fun updatePro(isPro: Boolean = checkPro()) {
+//        binding.apply {
+//            dialpadPurchaseThankYouHolder.beGoneIf(isPro)
+//
+//            arrayOf(
+//                settingsSimCardColor1Holder,
+//                settingsSimCardColor2Holder
+//            ).forEach {
+//                it.alpha = if (isPro) 1f else 0.4f
+//            }
+//        }
+//    }
 
-            arrayOf(
-                settingsSimCardColor1Holder,
-                settingsSimCardColor2Holder
-            ).forEach {
-                it.alpha = if (isPro) 1f else 0.4f
-            }
-        }
-    }
-
-    private fun shakePurchase() {
-        RxAnimation.from(binding.dialpadPurchaseThankYouHolder)
-            .shake()
-            .subscribe()
-    }
+//    private fun shakePurchase() {
+//        RxAnimation.from(binding.dialpadPurchaseThankYouHolder)
+//            .shake()
+//            .subscribe()
+//    }
 
     private fun updateProducts() {
         val productList: ArrayList<String> = arrayListOf(productIdX1, productIdX2, productIdX3, subscriptionIdX1, subscriptionIdX2, subscriptionIdX3)

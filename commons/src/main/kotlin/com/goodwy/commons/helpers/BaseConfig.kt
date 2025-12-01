@@ -337,7 +337,7 @@ open class BaseConfig(val context: Context) {
         set(lastUsedViewPagerPage) = prefs.edit { putInt(LAST_USED_VIEW_PAGER_PAGE, lastUsedViewPagerPage) }
 
     var use24HourFormat: Boolean
-        get() = prefs.getBoolean(USE_24_HOUR_FORMAT, DateFormat.is24HourFormat(context))
+        get() = prefs.getBoolean(USE_24_HOUR_FORMAT, true) //always use 24 hour format
         set(use24HourFormat) = prefs.edit { putBoolean(USE_24_HOUR_FORMAT, use24HourFormat) }
 
     val isUse24HourFormat: Flow<Boolean> = ::use24HourFormat.asFlowNonNull()
@@ -438,7 +438,7 @@ open class BaseConfig(val context: Context) {
             "mm-dd-y" -> DATE_FORMAT_SEVEN
             "dd-mm-y" -> DATE_FORMAT_EIGHT
             "y.mm.dd" -> DATE_FORMAT_TEN
-            else -> DATE_FORMAT_ONE
+            else -> DATE_FORMAT_TEN // change the default data format
         }
     }
 

@@ -29,12 +29,6 @@
             android:orientation="vertical"
             android:layout_alignParentBottom="true">
 
-            <com.goodwy.commons.views.PurchaseThankYouItem
-                android:id="@+id/dialpadPurchaseThankYouHolder"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/medium_margin"/>
-
             <androidx.cardview.widget.CardView
                 android:id="@+id/styleHolder"
                 style="@style/SettingsSectionHolder"
@@ -163,7 +157,7 @@
                         android:id="@+id/settingsShowVoicemailIconHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsShowVoicemailIcon"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_voicemail_icon"
@@ -174,7 +168,7 @@
                         android:id="@+id/settingsHideDialpadLettersHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsHideDialpadLetters"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/hide_dialpad_letters_g"
@@ -251,7 +245,7 @@
                         android:id="@+id/settingsClearDialpadHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsClearDialpad"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/clear_dialpad_when_start_call"
@@ -262,7 +256,7 @@
                         android:id="@+id/settings_dialpad_vibration_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_dialpad_vibration"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/dialpad_vibrations"
@@ -287,7 +281,7 @@
                             android:paddingStart="@dimen/smaller_margin"
                             android:paddingEnd="@dimen/smaller_margin">
 
-                            <com.goodwy.commons.views.MyMaterialSwitch
+                            <com.goodwy.commons.views.MyLiquidSwitch
                                 android:id="@+id/settingsDialpadBeeps"
                                 style="@style/SettingsSwitchStyle"
                                 android:text="@string/dialpad_beeps"

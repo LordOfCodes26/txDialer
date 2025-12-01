@@ -62,7 +62,7 @@ class ChangeDateTimeFormatDialog(val activity: Activity, val showShamsi: Boolean
                 DATE_FORMAT_SIX -> changeDateTimeDialogRadioSix
                 DATE_FORMAT_SEVEN -> changeDateTimeDialogRadioSeven
                 DATE_FORMAT_TEN -> changeDateTimeDialogRadioTen
-                else -> changeDateTimeDialogRadioEight
+                else -> changeDateTimeDialogRadioTen
             }
             formatButton.isChecked = true
 
@@ -108,7 +108,7 @@ class ChangeDateTimeFormatDialog(val activity: Activity, val showShamsi: Boolean
             view.changeDateTimeDialogRadioSix.id -> DATE_FORMAT_SIX
             view.changeDateTimeDialogRadioSeven.id -> DATE_FORMAT_SEVEN
             view.changeDateTimeDialogRadioTen.id -> DATE_FORMAT_TEN
-            else -> DATE_FORMAT_EIGHT
+            else -> DATE_FORMAT_TEN
         }
 
         activity.baseConfig.use24HourFormat = view.changeDateTimeDialog24Hour.isChecked

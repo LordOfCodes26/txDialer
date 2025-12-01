@@ -162,7 +162,7 @@ class Config(context: Context) : BaseConfig(context) {
         set(missedCallNotifications) = prefs.edit { putBoolean(MISSED_CALL_NOTIFICATIONS, missedCallNotifications) }
 
     var hideDialpadLetters: Boolean
-        get() = prefs.getBoolean(HIDE_DIALPAD_LETTERS, false)
+        get() = prefs.getBoolean(HIDE_DIALPAD_LETTERS, true)
         set(hideDialpadLetters) = prefs.edit { putBoolean(HIDE_DIALPAD_LETTERS, hideDialpadLetters) }
 
     var backgroundCallScreen: Int
@@ -170,7 +170,7 @@ class Config(context: Context) : BaseConfig(context) {
         set(backgroundCallScreen) = prefs.edit { putInt(BACKGROUND_CALL_SCREEN, backgroundCallScreen) }
 
     var dialpadStyle: Int
-        get() = prefs.getInt(DIALPAD_STYLE, DIALPAD_ORIGINAL)
+        get() = prefs.getInt(DIALPAD_STYLE, DIALPAD_IOS)
         set(dialpadStyle) = prefs.edit { putInt(DIALPAD_STYLE, dialpadStyle) }
 
     var dialpadSize: Int

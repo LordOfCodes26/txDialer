@@ -105,8 +105,8 @@ class SettingsActivity : SimpleActivity() {
 
         setupCustomizeColors()
         setupDialPadOpen()
-        setupOverflowIcon()
-        setupFloatingButtonStyle()
+//        setupOverflowIcon()        //disable overflow icon style
+//        setupFloatingButtonStyle() //disable floating button style
         setupUseColoredContacts()
         setupContactsColorList()
         setupColorSimIcons()
@@ -114,11 +114,11 @@ class SettingsActivity : SimpleActivity() {
 
         setupManageBlockedNumbers()
         setupUseSpeechToText()
-        setupChangeDateTimeFormat()
+//        setupChangeDateTimeFormat() //disable change data time format
         setupFormatPhoneNumbers()
         setupFontSize()
-        setupUseEnglish()
-        setupLanguage()
+//        setupUseEnglish()
+//        setupLanguage()             //disable select language
 
         setupDefaultTab()
         setupManageShownTabs()
@@ -137,7 +137,7 @@ class SettingsActivity : SimpleActivity() {
 
         setupManageSpeedDial()
         setupDialpadStyle()
-        setupShowRecentCallsOnDialpad()
+//        setupShowRecentCallsOnDialpad()
 
         setupFlashForAlerts()
 
@@ -239,7 +239,7 @@ class SettingsActivity : SimpleActivity() {
         val id = 704 //TODO changelog
         binding.settingsToolbar.menu.apply {
             findItem(R.id.calling_accounts).isVisible = canLaunchAccountsConfiguration()
-            findItem(R.id.whats_new).isVisible = BuildConfig.VERSION_CODE == id
+            findItem(R.id.whats_new).isVisible = false
         }
         binding.settingsToolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
@@ -281,29 +281,29 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
-    private fun setupUseEnglish() {
-        binding.apply {
-            settingsUseEnglishHolder.beVisibleIf((config.wasUseEnglishToggled || Locale.getDefault().language != "en") && !isTiramisuPlus())
-            settingsUseEnglish.isChecked = config.useEnglish
-            settingsUseEnglishHolder.setOnClickListener {
-                settingsUseEnglish.toggle()
-                config.useEnglish = settingsUseEnglish.isChecked
-                exitProcess(0)
-            }
-        }
-    }
+//    private fun setupUseEnglish() {
+//        binding.apply {
+//            settingsUseEnglishHolder.beVisibleIf((config.wasUseEnglishToggled || Locale.getDefault().language != "en") && !isTiramisuPlus())
+//            settingsUseEnglish.isChecked = config.useEnglish
+//            settingsUseEnglishHolder.setOnClickListener {
+//                settingsUseEnglish.toggle()
+//                config.useEnglish = settingsUseEnglish.isChecked
+//                exitProcess(0)
+//            }
+//        }
+//    }
 
-    private fun setupLanguage() = binding.apply {
-        settingsLanguage.text = Locale.getDefault().displayLanguage
-        if (isTiramisuPlus()) {
-            settingsLanguageHolder.beVisible()
-            settingsLanguageHolder.setOnClickListener {
-                launchChangeAppLanguageIntent()
-            }
-        } else {
-            settingsLanguageHolder.beGone()
-        }
-    }
+//    private fun setupLanguage() = binding.apply {
+//        settingsLanguage.text = Locale.getDefault().displayLanguage
+//        if (isTiramisuPlus()) {
+//            settingsLanguageHolder.beVisible()
+//            settingsLanguageHolder.setOnClickListener {
+//                launchChangeAppLanguageIntent()
+//            }
+//        } else {
+//            settingsLanguageHolder.beGone()
+//        }
+//    }
 
     @SuppressLint("SetTextI18n")
     private fun setupManageBlockedNumbers() = binding.apply {
@@ -353,21 +353,21 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
-    private fun setupChangeDateTimeFormat() {
-        updateDateTimeFormat()
-        binding.settingsChangeDateTimeFormatHolder.setOnClickListener {
-            ChangeDateTimeFormatDialog(this, true) {
-                updateDateTimeFormat()
-                config.needRestart = true
-            }
-        }
-    }
+//    private fun setupChangeDateTimeFormat() {
+//        updateDateTimeFormat()
+//        binding.settingsChangeDateTimeFormatHolder.setOnClickListener {
+//            ChangeDateTimeFormatDialog(this, true) {
+//                updateDateTimeFormat()
+//                config.needRestart = true
+//            }
+//        }
+//    }
 
-    private fun updateDateTimeFormat() {
-        val cal = Calendar.getInstance(Locale.ENGLISH).timeInMillis
-        val formatDate = cal.formatDate(this@SettingsActivity)
-        binding.settingsChangeDateTimeFormat.text = formatDate
-    }
+//    private fun updateDateTimeFormat() {
+//        val cal = Calendar.getInstance(Locale.ENGLISH).timeInMillis
+//        val formatDate = cal.formatDate(this@SettingsActivity)
+//        binding.settingsChangeDateTimeFormat.text = formatDate
+//    }
 
     private fun setupFontSize() = binding.apply {
         settingsFontSize.text = getFontSizeText()
@@ -1164,71 +1164,71 @@ class SettingsActivity : SimpleActivity() {
         }
     )
 
-    private fun setupOverflowIcon() {
-        binding.apply {
-            settingsOverflowIcon.applyColorFilter(getProperTextColor())
-            settingsOverflowIcon.setImageResource(getOverflowIcon(baseConfig.overflowIcon))
-            settingsOverflowIconHolder.setOnClickListener {
-                val items = arrayListOf(
-                    com.goodwy.commons.R.drawable.ic_more_horiz,
-                    com.goodwy.commons.R.drawable.ic_three_dots_vector,
-                    com.goodwy.commons.R.drawable.ic_more_horiz_round
-                )
+//    private fun setupOverflowIcon() {
+//        binding.apply {
+//            settingsOverflowIcon.applyColorFilter(getProperTextColor())
+//            settingsOverflowIcon.setImageResource(getOverflowIcon(baseConfig.overflowIcon))
+//            settingsOverflowIconHolder.setOnClickListener {
+//                val items = arrayListOf(
+//                    com.goodwy.commons.R.drawable.ic_more_horiz,
+//                    com.goodwy.commons.R.drawable.ic_three_dots_vector,
+//                    com.goodwy.commons.R.drawable.ic_more_horiz_round
+//                )
+//
+//                IconListDialog(
+//                    activity = this@SettingsActivity,
+//                    items = items,
+//                    checkedItemId = baseConfig.overflowIcon + 1,
+//                    defaultItemId = OVERFLOW_ICON_HORIZONTAL + 1,
+//                    titleId = com.goodwy.strings.R.string.overflow_icon,
+//                    size = pixels(com.goodwy.commons.R.dimen.normal_icon_size).toInt(),
+//                    color = getProperTextColor()
+//                ) { wasPositivePressed, newValue ->
+//                    if (wasPositivePressed) {
+//                        if (baseConfig.overflowIcon != newValue - 1) {
+//                            baseConfig.overflowIcon = newValue - 1
+//                            settingsOverflowIcon.setImageResource(getOverflowIcon(baseConfig.overflowIcon))
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
-                IconListDialog(
-                    activity = this@SettingsActivity,
-                    items = items,
-                    checkedItemId = baseConfig.overflowIcon + 1,
-                    defaultItemId = OVERFLOW_ICON_HORIZONTAL + 1,
-                    titleId = com.goodwy.strings.R.string.overflow_icon,
-                    size = pixels(com.goodwy.commons.R.dimen.normal_icon_size).toInt(),
-                    color = getProperTextColor()
-                ) { wasPositivePressed, newValue ->
-                    if (wasPositivePressed) {
-                        if (baseConfig.overflowIcon != newValue - 1) {
-                            baseConfig.overflowIcon = newValue - 1
-                            settingsOverflowIcon.setImageResource(getOverflowIcon(baseConfig.overflowIcon))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun setupFloatingButtonStyle() {
-        binding.apply {
-            settingsFloatingButtonStyle.applyColorFilter(getProperTextColor())
-            settingsFloatingButtonStyle.setImageResource(
-                if (baseConfig.materialDesign3) R.drawable.squircle_bg else R.drawable.ic_circle_filled
-            )
-            settingsFloatingButtonStyleHolder.setOnClickListener {
-                val items = arrayListOf(
-                    R.drawable.ic_circle_filled,
-                    R.drawable.squircle_bg
-                )
-
-                IconListDialog(
-                    activity = this@SettingsActivity,
-                    items = items,
-                    checkedItemId = if (baseConfig.materialDesign3) 2 else 1,
-                    defaultItemId = 1,
-                    titleId = com.goodwy.strings.R.string.floating_button_style,
-                    size = pixels(com.goodwy.commons.R.dimen.normal_icon_size).toInt(),
-                    color = getProperTextColor()
-                ) { wasPositivePressed, newValue ->
-                    if (wasPositivePressed) {
-                        if (newValue != if (baseConfig.materialDesign3) 2 else 1) {
-                            baseConfig.materialDesign3 = newValue == 2
-                            settingsFloatingButtonStyle.setImageResource(
-                                if (newValue == 2) R.drawable.squircle_bg else R.drawable.ic_circle_filled
-                            )
-                            config.needRestart = true
-                        }
-                    }
-                }
-            }
-        }
-    }
+//    private fun setupFloatingButtonStyle() {
+//        binding.apply {
+//            settingsFloatingButtonStyle.applyColorFilter(getProperTextColor())
+//            settingsFloatingButtonStyle.setImageResource(
+//                if (baseConfig.materialDesign3) R.drawable.squircle_bg else R.drawable.ic_circle_filled
+//            )
+//            settingsFloatingButtonStyleHolder.setOnClickListener {
+//                val items = arrayListOf(
+//                    R.drawable.ic_circle_filled,
+//                    R.drawable.squircle_bg
+//                )
+//
+//                IconListDialog(
+//                    activity = this@SettingsActivity,
+//                    items = items,
+//                    checkedItemId = if (baseConfig.materialDesign3) 2 else 1,
+//                    defaultItemId = 1,
+//                    titleId = com.goodwy.strings.R.string.floating_button_style,
+//                    size = pixels(com.goodwy.commons.R.dimen.normal_icon_size).toInt(),
+//                    color = getProperTextColor()
+//                ) { wasPositivePressed, newValue ->
+//                    if (wasPositivePressed) {
+//                        if (newValue != if (baseConfig.materialDesign3) 2 else 1) {
+//                            baseConfig.materialDesign3 = newValue == 2
+//                            settingsFloatingButtonStyle.setImageResource(
+//                                if (newValue == 2) R.drawable.squircle_bg else R.drawable.ic_circle_filled
+//                            )
+//                            config.needRestart = true
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     private fun setupColorSimIcons() {
         binding.apply {
@@ -1359,15 +1359,15 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
-    private fun setupShowRecentCallsOnDialpad() {
-        binding.apply {
-            settingsShowRecentCallsOnDialpad.isChecked = config.showRecentCallsOnDialpad
-            settingsShowRecentCallsOnDialpadHolder.setOnClickListener {
-                settingsShowRecentCallsOnDialpad.toggle()
-                config.showRecentCallsOnDialpad = settingsShowRecentCallsOnDialpad.isChecked
-            }
-        }
-    }
+//    private fun setupShowRecentCallsOnDialpad() {
+//        binding.apply {
+//            settingsShowRecentCallsOnDialpad.isChecked = config.showRecentCallsOnDialpad
+//            settingsShowRecentCallsOnDialpadHolder.setOnClickListener {
+//                settingsShowRecentCallsOnDialpad.toggle()
+//                config.showRecentCallsOnDialpad = settingsShowRecentCallsOnDialpad.isChecked
+//            }
+//        }
+//    }
 
     private fun setupOpenSearch() {
         binding.apply {
