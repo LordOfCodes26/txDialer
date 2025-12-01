@@ -120,7 +120,7 @@
                         android:id="@+id/settings_colored_contacts_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_colored_contacts"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/colored_contacts"
@@ -157,7 +157,7 @@
                         android:id="@+id/settings_color_sim_card_icons_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_color_sim_card_icons"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/color_sim_card_icons"
@@ -296,7 +296,7 @@
                         android:id="@+id/settingsUseSpeechToTextHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsUseSpeechToText"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/voice_input"
@@ -309,7 +309,7 @@
                         style="@style/SettingsHolderSwitchStyle"
                         android:visibility="gone">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_hide_dialpad_letters"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/hide_dialpad_letters_g"
@@ -321,7 +321,7 @@
                         style="@style/SettingsHolderSwitchStyle"
                         android:visibility="gone">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_hide_dialpad_numbers"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/hide_dialpad_numbers"
@@ -332,7 +332,7 @@
                         android:id="@+id/settingsFormatPhoneNumbersHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsFormatPhoneNumbers"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/format_phone_numbers"
@@ -385,7 +385,7 @@
                         android:id="@+id/settings_use_english_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_use_english"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/use_english_language"
@@ -456,7 +456,7 @@
                         android:id="@+id/settings_open_dialpad_at_launch_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_open_dialpad_at_launch"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/open_dialpad_by_default"
@@ -506,7 +506,7 @@
                         android:id="@+id/settings_use_icon_tabs_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_use_icon_tabs"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/use_icon_tabs"
@@ -537,7 +537,7 @@
                         android:id="@+id/settings_open_search_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_open_search"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/open_search_when_open_contacts"
@@ -548,7 +548,7 @@
                         android:id="@+id/settingsEndSearchHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsEndSearch"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/end_search_when_changing_tab"
@@ -596,7 +596,7 @@
                             android:clickable="false"
                             android:text="@string/use_swipe_gestures_summary"/>
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsUseSwipeToAction"
                             style="@style/SettingsSwitchStyle"
                             android:layout_width="wrap_content"
@@ -610,7 +610,7 @@
                         android:id="@+id/settingsSwipeVibrationHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsSwipeVibration"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/vibrate_g"
@@ -621,7 +621,7 @@
                         android:id="@+id/settingsSwipeRippleHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsSwipeRipple"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/ripple_g"
@@ -672,7 +672,7 @@
                         android:id="@+id/settingsSkipDeleteConfirmationHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsSkipDeleteConfirmation"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/skip_delete_confirmation"
@@ -771,7 +771,7 @@
                             android:textStyle="bold"
                             android:includeFontPadding="false"/>
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsShowRecentCallsOnDialpad"
                             style="@style/SettingsSwitchStyle"
                             android:layout_width="wrap_content"
@@ -805,7 +805,7 @@
                         android:id="@+id/settingsFlashForAlertsHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsFlashForAlerts"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/flash_for_alerts"
@@ -857,7 +857,7 @@
                         style="@style/SettingsHolderSwitchStyle"
                         android:visibility="gone">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_transparent_call_screen"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/transparent_call_screen_g"
@@ -908,7 +908,7 @@
                         android:id="@+id/settings_always_show_fullscreen_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_always_show_fullscreen"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_incoming_calls_full_screen"
@@ -940,7 +940,7 @@
                             android:src="@drawable/ic_question_round"
                             android:contentDescription="@string/keep_calls_in_popup" />
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsKeepCallsInPopUp"
                             style="@style/SettingsSwitchStyle"
                             android:layout_width="wrap_content"
@@ -954,7 +954,7 @@
                         android:id="@+id/settingsBackPressedEndCallHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsBackPressedEndCall"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/back_pressed_end_call"
@@ -1042,7 +1042,7 @@
                         style="@style/SettingsHolderSwitchStyle"
                         android:visibility="gone">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_disable_swipe_to_answer"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/disable_swipe_to_answer"
@@ -1073,7 +1073,7 @@
                         android:id="@+id/settings_disable_proximity_sensor_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_disable_proximity_sensor"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/disable_proximity_sensor"
@@ -1084,7 +1084,7 @@
                         android:id="@+id/settingsCallVibrationHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsCallVibration"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/vibrate_on_button_press"
@@ -1095,7 +1095,7 @@
                         android:id="@+id/settingsCallStartEndVibrationHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsCallStartEndVibration"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/call_start_end_vibration"
@@ -1107,7 +1107,7 @@
                         style="@style/SettingsHolderSwitchStyle"
                         android:visibility="gone">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_dialpad_beeps"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/dialpad_beeps"
@@ -1118,7 +1118,7 @@
                         android:id="@+id/settings_show_call_confirmation_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_show_call_confirmation"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_call_confirmation_dialog"
@@ -1129,7 +1129,7 @@
                         android:id="@+id/settingsCallFromSameSimHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsCallFromSameSim"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/call_using_same_sim"
@@ -1140,7 +1140,7 @@
                         android:id="@+id/settingsCallBlockButtonHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsCallBlockButton"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_number_blocking_button"
@@ -1192,7 +1192,7 @@
                             android:src="@drawable/ic_question_round"
                             android:contentDescription="@string/open_dialpad_when_call_from_another_app_summary" />
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsBlockCallFromAnotherApp"
                             style="@style/SettingsSwitchStyle"
                             android:layout_width="wrap_content"
@@ -1248,7 +1248,7 @@
                         style="@style/SettingsHolderSwitchStyle"
                         android:visibility="gone">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_group_subsequent_calls"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/group_subsequent_calls"
@@ -1279,7 +1279,7 @@
                         android:id="@+id/settings_show_dividers_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_show_dividers"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_dividers"
@@ -1290,7 +1290,7 @@
                         android:id="@+id/settings_show_contact_thumbnails_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_show_contact_thumbnails"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_contact_thumbnails_g"
@@ -1321,7 +1321,7 @@
                         android:id="@+id/settings_show_phone_numbers_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_show_phone_numbers"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_phone_numbers_g"
@@ -1332,7 +1332,7 @@
                         android:id="@+id/settings_start_name_with_surname_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_start_name_with_surname"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/start_name_with_surname"
@@ -1343,7 +1343,7 @@
                         android:id="@+id/settingsShowNicknameInsteadNamesHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsShowNicknameInsteadNames"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/show_nicknames_instead_of_names"
@@ -1354,7 +1354,7 @@
                         android:id="@+id/settings_relative_date_holder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settings_relative_date"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/relative_date"
@@ -1365,7 +1365,7 @@
                         android:id="@+id/settingsChangeColourTopBarHolder"
                         style="@style/SettingsHolderSwitchStyle">
 
-                        <com.goodwy.commons.views.MyMaterialSwitch
+                        <com.goodwy.commons.views.MyLiquidSwitch
                             android:id="@+id/settingsChangeColourTopBar"
                             style="@style/SettingsSwitchStyle"
                             android:text="@string/change_top_bar_colour_when_scrolling"

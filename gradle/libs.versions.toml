@@ -114,6 +114,7 @@ compose-uiTooling-debug = { module = "androidx.compose.ui:ui-tooling", version.r
 compose-uiTooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compose-view-binding = { module = "androidx.compose.ui:ui-viewbinding", version.ref = "compose" }
 compose-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "detektCompose" }
+compose-material-ripple = { group = "androidx.compose.material", name = "material-ripple", version.ref = "compose" }
 #Glide
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 glide-compose = { module = "com.github.bumptech.glide:compose", version.ref = "glideCompose" }
@@ -151,7 +152,7 @@ compose = [
     "compose-ui",
     "compose-uiTooling-preview",
 ]
-compose-preview = [
+    compose-preview = [
     "androidx-customView",
     "androidx-customViewPooling",
     "compose-uiTooling-debug",

@@ -556,6 +556,12 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupUseColoredContacts() = binding.apply {
         settingsColoredContacts.isChecked = config.useColoredContacts
+        // listen to both click + drag from LiquidToggle
+        settingsColoredContacts.setOnCheckedChangeListener { isOn ->
+            config.useColoredContacts = isOn
+            settingsContactColorListHolder.beVisibleIf(isOn)
+            config.needRestart = true
+        }
         settingsColoredContactsHolder.setOnClickListener {
             settingsColoredContacts.toggle()
             config.useColoredContacts = settingsColoredContacts.isChecked

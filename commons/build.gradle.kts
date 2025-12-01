@@ -120,6 +120,7 @@ dependencies {
     implementation(libs.bundles.lifecycle)
     implementation(libs.bundles.compose)
     implementation(libs.compose.view.binding)
+    implementation(libs.compose.material.ripple)
     debugImplementation(libs.bundles.compose.preview)
 
     api(libs.joda.time)
@@ -142,6 +143,9 @@ dependencies {
 
     //Goodwy
     implementation(project(":strings"))
+    implementation("io.github.kyant0:capsule:2.1.1")
+    implementation("io.github.kyant0:backdrop:1.0.0")
+
     api(libs.billing.client)
     api(libs.rustore.client)
     api(libs.persian.date)

@@ -499,7 +499,7 @@
         <item name="android:background">?attr/selectableItemBackground</item>
         <item name="android:paddingStart">@dimen/normal_margin</item>
         <item name="android:paddingTop">@dimen/smaller_margin</item>
-        <item name="android:paddingEnd">@dimen/normal_margin</item>
+        <item name="android:paddingEnd">@dimen/medium_margin</item>
         <item name="android:paddingBottom">@dimen/smaller_margin</item>
     </style>
 
