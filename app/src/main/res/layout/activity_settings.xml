@@ -483,25 +483,25 @@
                             android:contentDescription="@string/manage_shown_tabs"/>
                     </RelativeLayout>
 
-                    <RelativeLayout
-                        android:id="@+id/settings_navigation_bar_style_holder"
-                        style="@style/SettingsHolderStyle">
+<!--                    <RelativeLayout-->
+<!--                        android:id="@+id/settings_navigation_bar_style_holder"-->
+<!--                        style="@style/SettingsHolderStyle">-->
 
-                        <com.goodwy.commons.views.MyTextView
-                            android:id="@+id/settings_navigation_bar_style_label"
-                            style="@style/SettingsTextLabelStyle"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:layout_toStartOf="@+id/settings_navigation_bar_style"
-                            android:text="@string/tab_navigation"/>
+<!--                        <com.goodwy.commons.views.MyTextView-->
+<!--                            android:id="@+id/settings_navigation_bar_style_label"-->
+<!--                            style="@style/SettingsTextLabelStyle"-->
+<!--                            android:layout_alignParentStart="true"-->
+<!--                            android:layout_centerVertical="true"-->
+<!--                            android:layout_toStartOf="@+id/settings_navigation_bar_style"-->
+<!--                            android:text="@string/tab_navigation"/>-->
 
-                        <com.goodwy.commons.views.MyTextView
-                            android:id="@+id/settings_navigation_bar_style"
-                            style="@style/SettingsTextValueStyle"
-                            android:layout_alignParentEnd="true"
-                            android:layout_marginEnd="@dimen/settings_margin"
-                            tools:text="@string/top"/>
-                    </RelativeLayout>
+<!--                        <com.goodwy.commons.views.MyTextView-->
+<!--                            android:id="@+id/settings_navigation_bar_style"-->
+<!--                            style="@style/SettingsTextValueStyle"-->
+<!--                            android:layout_alignParentEnd="true"-->
+<!--                            android:layout_marginEnd="@dimen/settings_margin"-->
+<!--                            tools:text="@string/top"/>-->
+<!--                    </RelativeLayout>-->
 
                     <RelativeLayout
                         android:id="@+id/settings_use_icon_tabs_holder"

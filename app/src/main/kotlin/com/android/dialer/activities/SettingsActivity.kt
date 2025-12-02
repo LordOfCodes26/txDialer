@@ -102,7 +102,7 @@ class SettingsActivity : SimpleActivity() {
     override fun onResume() {
         super.onResume()
         setupToolbar(binding.settingsToolbar, NavigationIcon.Arrow)
-
+        //TODO should add liquidToggle interaction
         setupCustomizeColors()
         setupDialPadOpen()
 //        setupOverflowIcon()        //disable overflow icon style
@@ -122,7 +122,7 @@ class SettingsActivity : SimpleActivity() {
 
         setupDefaultTab()
         setupManageShownTabs()
-        setupNavigationBarStyle()
+//        setupNavigationBarStyle()
         setupUseIconTabs()
         setupScreenSlideAnimation()
         setupOpenSearch()
@@ -411,23 +411,23 @@ class SettingsActivity : SimpleActivity() {
         }
     )
 
-    private fun setupNavigationBarStyle() {
-        binding.settingsNavigationBarStyle.text = getNavigationBarStyleText()
-        binding.settingsNavigationBarStyleHolder.setOnClickListener {
-            val items = arrayListOf(
-                RadioItem(0, getString(R.string.top), icon = R.drawable.ic_tab_top),
-                RadioItem(1, getString(R.string.bottom), icon = R.drawable.ic_tab_bottom),
-            )
-
-            val checkedItemId = if (config.bottomNavigationBar) 1 else 0
-            RadioGroupIconDialog(this@SettingsActivity, items, checkedItemId, R.string.tab_navigation) {
-                config.bottomNavigationBar = it == 1
-                config.needRestart = true
-                binding.settingsNavigationBarStyle.text = getNavigationBarStyleText()
-                binding.settingsChangeColourTopBarHolder.beVisibleIf(config.bottomNavigationBar)
-            }
-        }
-    }
+//    private fun setupNavigationBarStyle() {
+//        binding.settingsNavigationBarStyle.text = getNavigationBarStyleText()
+//        binding.settingsNavigationBarStyleHolder.setOnClickListener {
+//            val items = arrayListOf(
+//                RadioItem(0, getString(R.string.top), icon = R.drawable.ic_tab_top),
+//                RadioItem(1, getString(R.string.bottom), icon = R.drawable.ic_tab_bottom),
+//            )
+//
+//            val checkedItemId = if (config.bottomNavigationBar) 1 else 0
+//            RadioGroupIconDialog(this@SettingsActivity, items, checkedItemId, R.string.tab_navigation) {
+//                config.bottomNavigationBar = it == 1
+//                config.needRestart = true
+//                binding.settingsNavigationBarStyle.text = getNavigationBarStyleText()
+//                binding.settingsChangeColourTopBarHolder.beVisibleIf(config.bottomNavigationBar)
+//            }
+//        }
+//    }
 
     private fun setupChangeColourTopBar() {
         binding.apply {
