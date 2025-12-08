@@ -30,7 +30,7 @@ fun Context.isDarkTheme() = baseConfig.backgroundColor == resources.getColor(R.c
 fun Context.isBlackTheme() = baseConfig.backgroundColor == resources.getColor(R.color.theme_black_background_color, theme)
 
 fun Context.getProperTextColor() = when {
-    isDynamicTheme() -> resources.getColor(R.color.you_neutral_text_color, theme)
+    isDynamicTheme() -> /*resources.getColor(R.color.you_neutral_text_color, theme)*/ baseConfig.textColor
     else -> baseConfig.textColor
 }
 
@@ -40,7 +40,7 @@ fun Context.getProperBackgroundColor() = when {
 }
 
 fun Context.getProperPrimaryColor() = when {
-    isDynamicTheme() -> resources.getColor(R.color.you_primary_color, theme)
+    isDynamicTheme() -> /*resources.getColor(R.color.you_primary_color, theme)*/ baseConfig.primaryColor
     else -> baseConfig.primaryColor
 }
 
