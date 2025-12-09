@@ -1,14 +1,19 @@
 package com.android.dialer.activities
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.behaviorule.arturdumchev.library.pixels
@@ -30,6 +35,7 @@ import com.android.dialer.extensions.*
 import com.android.dialer.helpers.RecentsHelper
 import com.android.dialer.models.RecentCall
 import com.android.dialer.helpers.*
+import com.bumptech.glide.Glide
 import com.google.gson.Gson
 import com.mikhaellopez.rxanimation.RxAnimation
 import com.mikhaellopez.rxanimation.shake
@@ -52,6 +58,10 @@ class SettingsActivity : SimpleActivity() {
                 add("application/octet-stream")
             }
         }
+
+
+        private const val REQUEST_PICK_GALLERY_BACKGROUND = 1001
+        private const val REQUEST_PICK_GALLERY_BACKGROUND_PERMISSION = 1002
     }
 
     private val purchaseHelper = PurchaseHelper(this)
@@ -66,9 +76,6 @@ class SettingsActivity : SimpleActivity() {
     private val subscriptionYearIdX2 = BuildConfig.SUBSCRIPTION_YEAR_ID_X2
     private val subscriptionYearIdX3 = BuildConfig.SUBSCRIPTION_YEAR_ID_X3
     private var ruStoreIsConnected = false
-
-    private val REQUEST_PICK_GALLERY_BACKGROUND = 5521
-
 
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
     private val getContent =
@@ -200,7 +207,8 @@ class SettingsActivity : SimpleActivity() {
                 settingsNotificationsLabel,
                 settingsSecurityLabel,
                 settingsListViewLabel,
-                settingsBackupsLabel,).forEach {
+                settingsBackupsLabel,
+            ).forEach {
                 it.setTextColor(properPrimaryColor)
             }
 
@@ -239,6 +247,7 @@ class SettingsActivity : SimpleActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
+    @SuppressLint("WrongConstant", "ObsoleteSdkInt")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -262,12 +271,17 @@ class SettingsActivity : SimpleActivity() {
                 config.galleryBackgroundUri = uri.toString()
                 config.backgroundCallScreen = GALLERY_BACKGROUND
 
-                // Update UI
+                // Update UI text
                 binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
-                toast("Gallery background selected") // Optional feedback
 
-                // Immediately set the gallery background
-//                setGalleryBackground()
+                // Show thumbnail in the settings
+//                binding.settingsBackgroundThumbnail.visibility = View.VISIBLE
+//                Glide.with(this)
+//                    .load(uri)
+//                    .centerCrop()
+//                    .into(binding.settingsBackgroundThumbnail)
+
+                toast("Gallery background selected") // Optional feedback
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -275,6 +289,7 @@ class SettingsActivity : SimpleActivity() {
             }
         }
     }
+
 
 
     private fun setupOptionsMenu() {
@@ -289,10 +304,12 @@ class SettingsActivity : SimpleActivity() {
                     launchAccountsConfiguration()
                     true
                 }
+
                 R.id.whats_new -> {
                     showWhatsNewDialog(id)
                     true
                 }
+
                 else -> false
             }
         }
@@ -418,7 +435,8 @@ class SettingsActivity : SimpleActivity() {
                 RadioItem(FONT_SIZE_SMALL, getString(R.string.small)),
                 RadioItem(FONT_SIZE_MEDIUM, getString(R.string.medium)),
                 RadioItem(FONT_SIZE_LARGE, getString(R.string.large)),
-                RadioItem(FONT_SIZE_EXTRA_LARGE, getString(R.string.extra_large)))
+                RadioItem(FONT_SIZE_EXTRA_LARGE, getString(R.string.extra_large))
+            )
 
             RadioGroupDialog(this@SettingsActivity, items, config.fontSize, R.string.font_size) {
                 config.fontSize = it as Int
@@ -435,7 +453,8 @@ class SettingsActivity : SimpleActivity() {
                 RadioItem(TAB_LAST_USED, getString(R.string.last_used_tab)),
                 RadioItem(TAB_FAVORITES, getString(R.string.favorites_tab), icon = R.drawable.ic_star_vector_scaled),
                 RadioItem(TAB_CALL_HISTORY, getString(R.string.recents), icon = R.drawable.ic_clock_filled_scaled),
-                RadioItem(TAB_CONTACTS, getString(R.string.contacts_tab), icon = R.drawable.ic_person_rounded_scaled))
+                RadioItem(TAB_CONTACTS, getString(R.string.contacts_tab), icon = R.drawable.ic_person_rounded_scaled)
+            )
 
             RadioGroupIconDialog(this@SettingsActivity, items, config.defaultTab, R.string.default_tab) {
                 config.defaultTab = it as Int
@@ -714,19 +733,26 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun pickGalleryImage() {
-        if (!hasPermission(PERMISSION_READ_STORAGE)) {
-            handlePermission(PERMISSION_READ_STORAGE) { granted ->
-                if (granted) pickGalleryImage()
-                else toast(R.string.no_storage_permissions)
-            }
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+        // Check permission
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+            // Request permission
+            ActivityCompat.requestPermissions(this, arrayOf(permission), REQUEST_PICK_GALLERY_BACKGROUND_PERMISSION)
             return
         }
 
+        // Permission granted, launch gallery
         val intent = Intent(Intent.ACTION_PICK).apply {
             type = "image/*"
         }
         startActivityForResult(intent, REQUEST_PICK_GALLERY_BACKGROUND)
     }
+
 
     private fun getBackgroundCallScreenText() = getString(
         when (config.backgroundCallScreen) {
@@ -738,6 +764,22 @@ class SettingsActivity : SimpleActivity() {
             else -> R.string.theme
         }
     )
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQUEST_PICK_GALLERY_BACKGROUND_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                pickGalleryImage()
+            } else {
+                Toast.makeText(this, R.string.no_storage_permissions, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
 
     private fun setupTransparentCallScreen() {
@@ -862,7 +904,8 @@ class SettingsActivity : SimpleActivity() {
             val items = arrayListOf(
                 RadioItem(SHOW_CALLER_NOTHING, getString(R.string.nothing)),
                 RadioItem(SHOW_CALLER_COMPANY, getString(R.string.company)),
-                RadioItem(SHOW_CALLER_NICKNAME, getString(R.string.nickname)))
+                RadioItem(SHOW_CALLER_NICKNAME, getString(R.string.nickname))
+            )
 
             RadioGroupDialog(this@SettingsActivity, items, config.showCallerDescription, R.string.show_caller_description_g) {
                 config.showCallerDescription = it as Int
@@ -900,7 +943,12 @@ class SettingsActivity : SimpleActivity() {
             }
             settingsKeepCallsInPopUpFaq.imageTintList = ColorStateList.valueOf(getProperTextColor())
             settingsKeepCallsInPopUpFaq.setOnClickListener {
-                ConfirmationDialog(this@SettingsActivity, messageId = R.string.keep_calls_in_popup_summary, positive = com.goodwy.commons.R.string.ok, negative = 0) {}
+                ConfirmationDialog(
+                    this@SettingsActivity,
+                    messageId = R.string.keep_calls_in_popup_summary,
+                    positive = com.goodwy.commons.R.string.ok,
+                    negative = 0
+                ) {}
             }
         }
     }
@@ -1079,15 +1127,17 @@ class SettingsActivity : SimpleActivity() {
             )
 
             RadioGroupDialog(this@SettingsActivity, items, getGroupCallsCheckedItemId(), R.string.group_calls) {
-                when(it) {
+                when (it) {
                     GROUP_CALLS_SUBSEQUENT -> {
                         config.groupSubsequentCalls = true
                         config.groupAllCalls = false
                     }
+
                     GROUP_CALLS_ALL -> {
                         config.groupSubsequentCalls = false
                         config.groupAllCalls = true
                     }
+
                     else -> {
                         config.groupSubsequentCalls = false
                         config.groupAllCalls = false
@@ -1143,7 +1193,8 @@ class SettingsActivity : SimpleActivity() {
                 RadioItem(QUERY_LIMIT_MEDIUM_VALUE, QUERY_LIMIT_MEDIUM_VALUE.toString()),
                 RadioItem(QUERY_LIMIT_NORMAL_VALUE, QUERY_LIMIT_NORMAL_VALUE.toString()),
                 RadioItem(QUERY_LIMIT_BIG_VALUE, QUERY_LIMIT_BIG_VALUE.toString()),
-                RadioItem(QUERY_LIMIT_MAX_VALUE, "MAX"))
+                RadioItem(QUERY_LIMIT_MAX_VALUE, "MAX")
+            )
 
             RadioGroupDialog(this@SettingsActivity, items, config.queryLimitRecent, R.string.number_of_recent_calls_displays) {
                 config.queryLimitRecent = it as Int
@@ -1223,7 +1274,8 @@ class SettingsActivity : SimpleActivity() {
         binding.settingsSimDialogStyleHolder.setOnClickListener {
             val items = arrayListOf(
                 RadioItem(SIM_DIALOG_STYLE_LIST, getString(R.string.list)),
-                RadioItem(SIM_DIALOG_STYLE_BUTTON, getString(R.string.buttons)))
+                RadioItem(SIM_DIALOG_STYLE_BUTTON, getString(R.string.buttons))
+            )
 
             RadioGroupDialog(this@SettingsActivity, items, config.simDialogStyle, R.string.sim_card_selection_dialog_style) {
                 config.simDialogStyle = it as Int
@@ -1483,7 +1535,7 @@ class SettingsActivity : SimpleActivity() {
             settingsSwipeRippleHolder.beVisibleIf(config.useSwipeToAction)
             settingsSwipeRightActionHolder.beVisibleIf(config.useSwipeToAction)
             settingsSwipeLeftActionHolder.beVisibleIf(config.useSwipeToAction)
-            settingsSkipDeleteConfirmationHolder.beVisibleIf(config.useSwipeToAction &&(config.swipeLeftAction == SWIPE_ACTION_DELETE || config.swipeRightAction == SWIPE_ACTION_DELETE))
+            settingsSkipDeleteConfirmationHolder.beVisibleIf(config.useSwipeToAction && (config.swipeLeftAction == SWIPE_ACTION_DELETE || config.swipeRightAction == SWIPE_ACTION_DELETE))
         }
     }
 
@@ -1646,7 +1698,12 @@ class SettingsActivity : SimpleActivity() {
             }
             settingsBlockCallFromAnotherAppFaq.imageTintList = ColorStateList.valueOf(getProperTextColor())
             settingsBlockCallFromAnotherAppFaq.setOnClickListener {
-                ConfirmationDialog(this@SettingsActivity, messageId = R.string.open_dialpad_when_call_from_another_app_summary, positive = com.goodwy.commons.R.string.ok, negative = 0) {}
+                ConfirmationDialog(
+                    this@SettingsActivity,
+                    messageId = R.string.open_dialpad_when_call_from_another_app_summary,
+                    positive = com.goodwy.commons.R.string.ok,
+                    negative = 0
+                ) {}
             }
         }
     }
@@ -1673,7 +1730,17 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun updateProducts() {
-        val productList: ArrayList<String> = arrayListOf(productIdX1, productIdX2, productIdX3, subscriptionIdX1, subscriptionIdX2, subscriptionIdX3, subscriptionYearIdX1, subscriptionYearIdX2, subscriptionYearIdX3)
+        val productList: ArrayList<String> = arrayListOf(
+            productIdX1,
+            productIdX2,
+            productIdX3,
+            subscriptionIdX1,
+            subscriptionIdX2,
+            subscriptionIdX3,
+            subscriptionYearIdX1,
+            subscriptionYearIdX2,
+            subscriptionYearIdX3
+        )
         ruStoreHelper!!.getProducts(productList)
     }
 
