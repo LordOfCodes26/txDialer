@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,6 +66,9 @@ class SettingsActivity : SimpleActivity() {
     private val subscriptionYearIdX2 = BuildConfig.SUBSCRIPTION_YEAR_ID_X2
     private val subscriptionYearIdX3 = BuildConfig.SUBSCRIPTION_YEAR_ID_X3
     private var ruStoreIsConnected = false
+
+    private val REQUEST_PICK_GALLERY_BACKGROUND = 5521
+
 
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
     private val getContent =
@@ -234,6 +238,44 @@ class SettingsActivity : SimpleActivity() {
         updateMenuItemColors(menu)
         return super.onCreateOptionsMenu(menu)
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_PICK_GALLERY_BACKGROUND && resultCode == RESULT_OK) {
+            val uri = data?.data ?: return
+
+            try {
+                // Persist read permission for future access (if supported)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    try {
+                        val takeFlags = data.flags and
+                            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                        contentResolver.takePersistableUriPermission(uri, takeFlags)
+                    } catch (e: SecurityException) {
+                        e.printStackTrace()
+                        toast("Permission not granted for this image")
+                    }
+                }
+
+                // Save URI and update config
+                config.galleryBackgroundUri = uri.toString()
+                config.backgroundCallScreen = GALLERY_BACKGROUND
+
+                // Update UI
+                binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
+                toast("Gallery background selected") // Optional feedback
+
+                // Immediately set the gallery background
+//                setGalleryBackground()
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                toast("Unable to set gallery background")
+            }
+        }
+    }
+
 
     private fun setupOptionsMenu() {
         val id = 704 //TODO changelog
@@ -609,7 +651,8 @@ class SettingsActivity : SimpleActivity() {
                     RadioItem(THEME_BACKGROUND, getString(R.string.theme), icon = R.drawable.ic_theme),
                     RadioItem(BLUR_AVATAR, getString(R.string.blurry_contact_photo), icon = R.drawable.ic_contact_blur),
                     RadioItem(AVATAR, getString(R.string.contact_photo), icon = R.drawable.ic_contact_photo),
-                    RadioItem(BLACK_BACKGROUND, black, icon = R.drawable.ic_theme_black)
+                    RadioItem(BLACK_BACKGROUND, black, icon = R.drawable.ic_theme_black),
+                    RadioItem(GALLERY_BACKGROUND, getString(R.string.custom_from_gallery), icon = R.drawable.ic_wallpaper)
                 )
             } else {
                 arrayListOf(
@@ -617,42 +660,72 @@ class SettingsActivity : SimpleActivity() {
                     RadioItem(BLUR_AVATAR, getString(R.string.blurry_contact_photo), icon = R.drawable.ic_contact_blur),
                     RadioItem(AVATAR, getString(R.string.contact_photo), icon = R.drawable.ic_contact_photo),
                     RadioItem(TRANSPARENT_BACKGROUND, getString(R.string.blurry_wallpaper), icon = R.drawable.ic_wallpaper),
-                    RadioItem(BLACK_BACKGROUND, black, icon = R.drawable.ic_theme_black)
+                    RadioItem(BLACK_BACKGROUND, black, icon = R.drawable.ic_theme_black),
+                    RadioItem(GALLERY_BACKGROUND, getString(R.string.custom_from_gallery), icon = R.drawable.ic_wallpaper)
                 )
             }
 
-            RadioGroupIconDialog(this@SettingsActivity, items, config.backgroundCallScreen, R.string.call_screen_background) {
-                if (it as Int == TRANSPARENT_BACKGROUND) {
-                    if (hasPermission(PERMISSION_READ_STORAGE)) {
-                        config.backgroundCallScreen = it
-                        binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
-                    } else {
-                        handlePermission(PERMISSION_READ_STORAGE) { permission ->
-                            if (permission) {
-                                config.backgroundCallScreen = it
-                                binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
-                            } else {
-                                toast(R.string.no_storage_permissions)
+
+            RadioGroupIconDialog(this@SettingsActivity, items, config.backgroundCallScreen, R.string.call_screen_background) { selected ->
+                selected as Int
+
+                when (selected) {
+
+                    TRANSPARENT_BACKGROUND -> {
+                        if (hasPermission(PERMISSION_READ_STORAGE)) {
+                            config.backgroundCallScreen = selected
+                            binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
+                        } else {
+                            handlePermission(PERMISSION_READ_STORAGE) { permission ->
+                                if (permission) {
+                                    config.backgroundCallScreen = selected
+                                    binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
+                                } else {
+                                    toast(R.string.no_storage_permissions)
+                                }
                             }
                         }
                     }
-                } else if (it == BLACK_BACKGROUND) {
-                    if (pro) {
-                        config.backgroundCallScreen = it
-                        binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
-                    } else {
-                        RxAnimation.from(binding.settingsBackgroundCallScreenHolder)
-                            .shake(shakeTranslation = 2f)
-                            .subscribe()
 
-                        showSnackbar(binding.root)
+                    BLACK_BACKGROUND -> {
+                        if (pro) {
+                            config.backgroundCallScreen = selected
+                            binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
+                        } else {
+                            RxAnimation.from(binding.settingsBackgroundCallScreenHolder)
+                                .shake(shakeTranslation = 2f)
+                                .subscribe()
+                            showSnackbar(binding.root)
+                        }
                     }
-                } else {
-                    config.backgroundCallScreen = it
-                    binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
+
+                    GALLERY_BACKGROUND -> {
+                        pickGalleryImage()
+                    }
+
+                    else -> {
+                        config.backgroundCallScreen = selected
+                        binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
+                    }
                 }
             }
+
         }
+    }
+
+    private fun pickGalleryImage() {
+        if (!hasPermission(PERMISSION_READ_STORAGE)) {
+            handlePermission(PERMISSION_READ_STORAGE) { granted ->
+                if (granted) pickGalleryImage()
+                else toast(R.string.no_storage_permissions)
+            }
+            return
+        }
+
+        val intent = Intent(Intent.ACTION_PICK).apply {
+            type = "image/*"
+        }
+        startActivityForResult(intent, REQUEST_PICK_GALLERY_BACKGROUND)
     }
 
     private fun getBackgroundCallScreenText() = getString(
@@ -661,9 +734,11 @@ class SettingsActivity : SimpleActivity() {
             AVATAR -> R.string.contact_photo
             TRANSPARENT_BACKGROUND -> R.string.blurry_wallpaper
             BLACK_BACKGROUND -> R.string.black
+            GALLERY_BACKGROUND -> R.string.custom_from_gallery
             else -> R.string.theme
         }
     )
+
 
     private fun setupTransparentCallScreen() {
         binding.apply {

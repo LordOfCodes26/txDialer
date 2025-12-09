@@ -46,6 +46,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.get
 import androidx.core.view.size
 import com.android.dialer.services.CallService
+import androidx.core.net.toUri
 
 
 class CallActivity : SimpleActivity() {
@@ -109,6 +110,12 @@ class CallActivity : SimpleActivity() {
             if (configBackgroundCallScreen == BLACK_BACKGROUND) {
                 binding.callHolder.setBackgroundColor(Color.BLACK)
             }
+
+            // --- GALLERY BACKGROUND ---
+            if (configBackgroundCallScreen == GALLERY_BACKGROUND) {
+                setGalleryBackground()   // <-- NEW FUNCTION
+            }
+
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 if (configBackgroundCallScreen == TRANSPARENT_BACKGROUND && hasPermission(PERMISSION_READ_STORAGE)) {
@@ -339,6 +346,75 @@ class CallActivity : SimpleActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    @SuppressLint("UseKtx")
+    private fun setGalleryBackground() {
+        val uriString = config.galleryBackgroundUri
+        if (uriString.isEmpty()) return
+
+        val uri = uriString.toUri()
+
+        try {
+            // Decode bitmap efficiently
+            val inputStream = contentResolver.openInputStream(uri) ?: return
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeStream(inputStream, null, options)
+            inputStream.close()
+
+            val targetWidth = binding.callHolder.width.takeIf { it > 0 } ?: 1080
+            val targetHeight = binding.callHolder.height.takeIf { it > 0 } ?: 1920
+            options.inSampleSize = calculateInSampleSize(options, targetWidth, targetHeight)
+            options.inJustDecodeBounds = false
+
+            val finalInputStream = contentResolver.openInputStream(uri) ?: return
+            val bitmap = BitmapFactory.decodeStream(finalInputStream, null, options)
+            finalInputStream.close()
+            if (bitmap == null) return
+
+            // Wait until layout is ready
+            binding.callHolder.post {
+                val width = binding.callHolder.width.takeIf { it > 0 } ?: bitmap.width
+                val height = binding.callHolder.height.takeIf { it > 0 } ?: bitmap.height
+
+                val finalBitmap = bitmap.cropCenter(width, height)
+                val drawable = finalBitmap?.toDrawable(resources) ?: return@post
+                drawable.alpha = 90
+
+                if (isQPlus()) {
+                    drawable.colorFilter = BlendModeColorFilter(Color.DKGRAY, BlendMode.SOFT_LIGHT)
+                } else {
+                    drawable.setColorFilter(Color.DKGRAY, PorterDuff.Mode.DARKEN)
+                }
+
+                binding.callHolder.background = drawable
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            toast("Unable to load gallery background")
+        }
+    }
+
+
+    // Helper: calculate inSampleSize
+    private fun calculateInSampleSize(
+        options: BitmapFactory.Options,
+        reqWidth: Int,
+        reqHeight: Int
+    ): Int {
+        val (height: Int, width: Int) = options.outHeight to options.outWidth
+        var inSampleSize = 1
+
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
     }
 
     private fun initButtons() = binding.apply {

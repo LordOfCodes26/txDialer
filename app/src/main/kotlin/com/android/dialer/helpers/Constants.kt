@@ -25,6 +25,7 @@ const val MISSED_CALL_NOTIFICATIONS = "missed_call_notifications"
 const val MISSED_CALL_NOTIFICATION_ID = "missed_call_notification_id"
 const val HIDE_DIALPAD_LETTERS = "hide_dialpad_letters"
 const val BACKGROUND_CALL_SCREEN = "background_call_screen"
+const val BACKGROUND_GALLERY_URI = "background_gallery_uri"
 const val SHOW_ALL_RECENT_IN_HISTORY = "show_all_recent_in_history"
 const val DIALPAD_STYLE = "dialpad_style"
 const val DIALPAD_SIZE = "dialpad_size"
@@ -90,7 +91,7 @@ const val BLUR_AVATAR = 1
 const val AVATAR = 2
 const val TRANSPARENT_BACKGROUND = 3
 const val BLACK_BACKGROUND = 4
-
+const val GALLERY_BACKGROUND = 5
 // Dialpad style
 const val DIALPAD_ORIGINAL = 0
 const val DIALPAD_GRID = 1

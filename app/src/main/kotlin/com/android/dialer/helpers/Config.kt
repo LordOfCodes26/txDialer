@@ -169,6 +169,10 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getInt(BACKGROUND_CALL_SCREEN, BLUR_AVATAR)
         set(backgroundCallScreen) = prefs.edit { putInt(BACKGROUND_CALL_SCREEN, backgroundCallScreen) }
 
+    var galleryBackgroundUri: String
+        get() = prefs.getString("BACKGROUND_GALLERY_URI", "") ?: ""
+        set(value) = prefs.edit { putString("BACKGROUND_GALLERY_URI", value) }
+
     var dialpadStyle: Int
         get() = prefs.getInt(DIALPAD_STYLE, DIALPAD_IOS)
         set(dialpadStyle) = prefs.edit { putInt(DIALPAD_STYLE, dialpadStyle) }
