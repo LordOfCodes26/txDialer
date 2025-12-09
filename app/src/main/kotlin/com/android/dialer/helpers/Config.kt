@@ -360,5 +360,15 @@ class Config(context: Context) : BaseConfig(context) {
     var swipeRipple: Boolean
         get() = prefs.getBoolean(SWIPE_RIPPLE, false)
         set(swipeRipple) = prefs.edit { putBoolean(SWIPE_RIPPLE, swipeRipple) }
+
+
+    //call settings
+    var enableAutoRedial: Boolean
+        get() = prefs.getBoolean(AUTO_REDIAL, false)
+        set(autoRedial) = prefs.edit { putBoolean(AUTO_REDIAL, autoRedial) }
+
+    var enableShakeToAnswer: Boolean
+        get() = prefs.getBoolean(SHAKE_TO_ANSWER, false)
+        set(shakeToAnswer) = prefs.edit { putBoolean(SHAKE_TO_ANSWER, shakeToAnswer) }
 }
 

@@ -1,10 +1,15 @@
 package com.android.dialer.services
 
 import android.Manifest
-import android.telecom.CallAudioState
+import android.content.Context
+import android.content.Intent
+import android.hardware.SensorManager
+import android.net.Uri
 import android.telecom.Call
+import android.telecom.CallAudioState
 import android.telecom.InCallService
 import android.telecom.PhoneAccountHandle
+import android.telecom.VideoProfile
 import android.telephony.SubscriptionManager
 import androidx.annotation.RequiresPermission
 import com.android.dialer.activities.CallActivity
@@ -13,17 +18,29 @@ import com.android.dialer.extensions.isOutgoing
 import com.android.dialer.extensions.powerManager
 import com.android.dialer.helpers.*
 import com.android.dialer.models.Events
-import com.android.dialer.sim.SimStateManager
+import com.squareup.seismic.ShakeDetector
 import org.greenrobot.eventbus.EventBus
 
 class CallService : InCallService() {
+
     private val callNotificationManager by lazy { CallNotificationManager(this) }
+
+    private var shakeDetector: ShakeDetector? = null
+    private var isNear = false
+    private var proximityListener: android.hardware.SensorEventListener? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        // Pass auto-redial config to CallManager
+        CallManager.enableAutoRedial = config.enableAutoRedial
+    }
 
     private val callListener = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
             super.onStateChanged(call, state)
             if (state == Call.STATE_DISCONNECTED || state == Call.STATE_DISCONNECTING) {
                 callNotificationManager.cancelNotification()
+                stopShakeDetector()
             } else {
                 callNotificationManager.setupNotification()
             }
@@ -32,45 +49,54 @@ class CallService : InCallService() {
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
+
+        // Register call in CallManager
         CallManager.onCallAdded(call)
         CallManager.inCallService = this
         call.registerCallback(callListener)
 
-        //val isScreenLocked = (getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isDeviceLocked
+        // Start shake detector if incoming and shake-to-answer enabled
+        if (config.enableShakeToAnswer &&
+            !call.isOutgoing() &&
+            call.state == Call.STATE_RINGING &&
+            !powerManager.isInteractive
+        ) {
+            startProximitySensor()
+            startShakeDetector(call)
+        }
+
+        // Launch UI or show notification based on power state / config
         when {
-            !powerManager.isInteractive /*|| isScreenLocked*/ -> {
+            !powerManager.isInteractive -> {
                 try {
                     startActivity(CallActivity.getStartIntent(this))
                     callNotificationManager.setupNotification(true)
                 } catch (_: Exception) {
-                    // seems like startActivity can throw AndroidRuntimeException and ActivityNotFoundException, not yet sure when and why, lets show a notification
                     callNotificationManager.setupNotification()
                 }
             }
-
             call.isOutgoing() -> {
                 try {
                     startActivity(CallActivity.getStartIntent(this, needSelectSIM = call.details.accountHandle == null))
                     callNotificationManager.setupNotification(true)
                 } catch (_: Exception) {
-                    // seems like startActivity can throw AndroidRuntimeException and ActivityNotFoundException, not yet sure when and why, lets show a notification
                     callNotificationManager.setupNotification()
                 }
             }
-
-            config.showIncomingCallsFullScreen /*&& getPhoneSize() < 2*/ -> {
+            config.showIncomingCallsFullScreen -> {
                 try {
                     startActivity(CallActivity.getStartIntent(this))
                     callNotificationManager.setupNotification(true)
                 } catch (_: Exception) {
-                    // seems like startActivity can throw AndroidRuntimeException and ActivityNotFoundException, not yet sure when and why, lets show a notification
                     callNotificationManager.setupNotification()
                 }
             }
-
             else -> callNotificationManager.setupNotification()
         }
-        if (!call.isOutgoing() && !powerManager.isInteractive && config.flashForAlerts) MyCameraImpl.newInstance(this).toggleSOS()
+
+        if (!call.isOutgoing() && !powerManager.isInteractive && config.flashForAlerts) {
+            MyCameraImpl.newInstance(this).toggleSOS()
+        }
     }
 
     @RequiresPermission(Manifest.permission.READ_PHONE_STATE)
@@ -78,35 +104,16 @@ class CallService : InCallService() {
         super.onCallRemoved(call)
         call.unregisterCallback(callListener)
 
-        // get the slot index from accountHandle (do in service because we have Context)
-        val slotIndex = getSlotIndexFromHandle(call.details.accountHandle)
+        stopProximitySensor()
+        stopShakeDetector()
 
-        // compute minutes used (rounded up)
-        val connectTime = call.details.connectTimeMillis
-        val minutesUsed = if (connectTime > 0) {
-            (((System.currentTimeMillis() - connectTime) + 59_999) / 60_000).toInt()
-        } else 0
-
-        if (slotIndex >= 0 && minutesUsed > 0) {
-            SimStateManager.addUsedMinutes(slotIndex, minutesUsed)
-            // optionally persist right away
-            SimStateManager.saveAll(this)
-        }
-
-        val wasPrimaryCall = call == CallManager.getPrimaryCall()
         CallManager.onCallRemoved(call)
         EventBus.getDefault().post(Events.RefreshCallLog)
 
-        if (CallManager.pendingRedialHandle == null) {
-            if (CallManager.getPhoneState() == NoCall) {
-                CallManager.inCallService = null
-                callNotificationManager.cancelNotification()
-            } else {
-                callNotificationManager.setupNotification()
-                if (wasPrimaryCall) {
-                    startActivity(CallActivity.getStartIntent(this))
-                }
-            }
+        // Clean up notifications if no call remains
+        if (CallManager.getPhoneState() == NoCall) {
+            CallManager.inCallService = null
+            callNotificationManager.cancelNotification()
         } else {
             callNotificationManager.setupNotification()
         }
@@ -114,14 +121,15 @@ class CallService : InCallService() {
         if (config.flashForAlerts) MyCameraImpl.newInstance(this).stopSOS()
     }
 
-
+    /** Call this from CallActivity when user manually declines/hangs up */
+    fun markUserHungUp() {
+        CallManager.markUserHungUp()
+    }
 
     @Deprecated("Deprecated in Java")
     override fun onCallAudioStateChanged(audioState: CallAudioState?) {
         super.onCallAudioStateChanged(audioState)
-        if (audioState != null) {
-            CallManager.onAudioStateChanged(audioState)
-        }
+        audioState?.let { CallManager.onAudioStateChanged(it) }
     }
 
     @RequiresPermission(Manifest.permission.READ_PHONE_STATE)
@@ -130,23 +138,64 @@ class CallService : InCallService() {
         val sm = getSystemService(SubscriptionManager::class.java) ?: return -1
         val list = sm.activeSubscriptionInfoList ?: return -1
         for (info in list) {
-            // match by subscriptionId string, iccid or label - OEMs differ
-            if (info.subscriptionId.toString() == handle.id || info.iccId == handle.id) {
-                return info.simSlotIndex
-            }
+            if (info.subscriptionId.toString() == handle.id || info.iccId == handle.id) return info.simSlotIndex
         }
-        // fallback: try matching by carrier name
         for (info in list) {
             if (info.carrierName?.toString() == handle.id) return info.simSlotIndex
         }
         return -1
     }
 
+    private fun startShakeDetector(call: Call) {
+        if (!config.enableShakeToAnswer) return
+
+        val sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        shakeDetector = ShakeDetector {
+            if (!isNear) {
+                call.answer(VideoProfile.STATE_AUDIO_ONLY)
+                stopShakeDetector()
+                stopProximitySensor()
+            }
+        }
+        shakeDetector?.start(sm)
+    }
+
+    private fun stopShakeDetector() {
+        shakeDetector?.stop()
+        shakeDetector = null
+    }
+
+    private fun startProximitySensor() {
+        val sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val proximity = sm.getDefaultSensor(android.hardware.Sensor.TYPE_PROXIMITY) ?: return
+
+        proximityListener = object : android.hardware.SensorEventListener {
+            override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+            override fun onSensorChanged(event: android.hardware.SensorEvent?) {
+                event ?: return
+                isNear = event.values[0] < proximity.maximumRange
+            }
+        }
+
+        sm.registerListener(
+            proximityListener,
+            proximity,
+            SensorManager.SENSOR_DELAY_NORMAL
+        )
+    }
+
+    private fun stopProximitySensor() {
+        val sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        proximityListener?.let { sm.unregisterListener(it) }
+        proximityListener = null
+        isNear = false
+    }
 
     override fun onDestroy() {
         super.onDestroy()
         callNotificationManager.cancelNotification()
+        stopProximitySensor()
+        stopShakeDetector()
         if (config.flashForAlerts) MyCameraImpl.newInstance(this).stopSOS()
     }
 }
-

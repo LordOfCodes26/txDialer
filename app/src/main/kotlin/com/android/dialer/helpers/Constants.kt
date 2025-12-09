@@ -136,6 +136,10 @@ const val SWIPE_ACTION_CALL = 5
 const val SWIPE_ACTION_MESSAGE = 6
 const val SWIPE_VIBRATION = "swipe_vibration"
 const val SWIPE_RIPPLE = "swipe_ripple"
+//call settings
+const val AUTO_REDIAL = "auto_redial"
+const val SHAKE_TO_ANSWER = "shake_to_answer"
+
 
 // Query limit recent
 const val QUERY_LIMIT_SMALL_VALUE = 500

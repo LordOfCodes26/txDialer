@@ -160,6 +160,7 @@ dependencies {
     detektPlugins(libs.compose.detekt)
 
     //Goodwy
+    implementation("com.squareup:seismic:1.0.2")
     implementation(libs.shortcut.badger)
     implementation(libs.behavio.rule)
     implementation(libs.rx.animation)

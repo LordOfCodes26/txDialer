@@ -45,6 +45,7 @@ import kotlin.math.min
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.get
 import androidx.core.view.size
+import com.android.dialer.services.CallService
 
 
 class CallActivity : SimpleActivity() {
@@ -1342,6 +1343,7 @@ class CallActivity : SimpleActivity() {
                         setText(R.string.answer_end_other_call)
                         setOnClickListener {
                             acceptCall()
+                            CallManager.markUserHungUp() // auto redial
                             callActive?.disconnect()
                         }
                     }
