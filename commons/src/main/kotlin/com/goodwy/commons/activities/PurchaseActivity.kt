@@ -578,8 +578,8 @@ class PurchaseActivity : BaseSimpleActivity() {
     private fun setupCollection() {
         binding.collectionHolder.beVisible()
         val appDialerPackage = "com.android.dialer"
-        val appContactsPackage = "com.goodwy.contacts"
-        val appSmsMessengerPackage = "com.goodwy.smsmessenger"
+        val appContactsPackage = "com.android.contacts"
+        val appSmsMessengerPackage = "com.android.mms"
         val appGalleryPackage = "com.goodwy.gallery"
         val appAudiobookLitePackage = "com.goodwy.audiobooklite"
         val appFilesPackage = "com.goodwy.filemanager"

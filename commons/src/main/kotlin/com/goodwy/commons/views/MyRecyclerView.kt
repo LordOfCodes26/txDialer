@@ -8,6 +8,7 @@ import android.view.ScaleGestureDetector
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.goodwy.commons.R
+import com.goodwy.commons.helpers.BouncyEdgeEffectFactory
 import com.goodwy.commons.interfaces.RecyclerScrollCallback
 
 // drag selection is based on https://github.com/afollestad/drag-select-recyclerview
@@ -81,6 +82,11 @@ open class MyRecyclerView : RecyclerView {
         }
 
         scaleDetector = ScaleGestureDetector(context, GestureListener(gestureListener))
+        isNestedScrollingEnabled = true
+
+        overScrollMode = OVER_SCROLL_ALWAYS
+
+        setEdgeEffectFactory(BouncyEdgeEffectFactory())
     }
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
@@ -109,31 +115,145 @@ open class MyRecyclerView : RecyclerView {
         totalItemCount = 0
     }
 
+    //    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+//        if (!dragSelectActive) {
+//            try {
+//                super.dispatchTouchEvent(ev)
+//            } catch (ignored: Exception) {
+//            }
+//        }
+//
+//        when (ev.action) {
+//            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+//                dragSelectActive = false
+//                inTopHotspot = false
+//                inBottomHotspot = false
+//                autoScrollHandler.removeCallbacks(autoScrollRunnable)
+//                currScaleFactor = 1.0f
+//                lastUp = System.currentTimeMillis()
+//                return true
+//            }
+//
+//            MotionEvent.ACTION_MOVE -> {
+//                if (dragSelectActive) {
+//                    val itemPosition = getItemPosition(ev)
+//                    if (hotspotHeight > -1) {
+//                        if (ev.y in hotspotTopBoundStart.toFloat()..hotspotTopBoundEnd.toFloat()) {
+//                            inBottomHotspot = false
+//                            if (!inTopHotspot) {
+//                                inTopHotspot = true
+//                                autoScrollHandler.removeCallbacks(autoScrollRunnable)
+//                                autoScrollHandler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY)
+//                            }
+//
+//                            val simulatedFactor = (hotspotTopBoundEnd - hotspotTopBoundStart).toFloat()
+//                            val simulatedY = ev.y - hotspotTopBoundStart
+//                            autoScrollVelocity = (simulatedFactor - simulatedY).toInt() / 2
+//                        } else if (ev.y in hotspotBottomBoundStart.toFloat()..hotspotBottomBoundEnd.toFloat()) {
+//                            inTopHotspot = false
+//                            if (!inBottomHotspot) {
+//                                inBottomHotspot = true
+//                                autoScrollHandler.removeCallbacks(autoScrollRunnable)
+//                                autoScrollHandler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY)
+//                            }
+//
+//                            val simulatedY = ev.y + hotspotBottomBoundEnd
+//                            val simulatedFactor = (hotspotBottomBoundStart + hotspotBottomBoundEnd).toFloat()
+//                            autoScrollVelocity = (simulatedY - simulatedFactor).toInt() / 2
+//                        } else if (inTopHotspot || inBottomHotspot) {
+//                            autoScrollHandler.removeCallbacks(autoScrollRunnable)
+//                            inTopHotspot = false
+//                            inBottomHotspot = false
+//                        }
+//                    }
+//
+//                    if (itemPosition != NO_POSITION && lastDraggedIndex != itemPosition) {
+//                        lastDraggedIndex = itemPosition
+//                        if (minReached == -1) {
+//                            minReached = lastDraggedIndex
+//                        }
+//
+//                        if (maxReached == -1) {
+//                            maxReached = lastDraggedIndex
+//                        }
+//
+//                        if (lastDraggedIndex > maxReached) {
+//                            maxReached = lastDraggedIndex
+//                        }
+//
+//                        if (lastDraggedIndex < minReached) {
+//                            minReached = lastDraggedIndex
+//                        }
+//
+//                        dragListener?.selectRange(initialSelection, lastDraggedIndex, minReached, maxReached)
+//
+//                        if (initialSelection == lastDraggedIndex) {
+//                            minReached = lastDraggedIndex
+//                            maxReached = lastDraggedIndex
+//                        }
+//                    }
+//
+//                    return true
+//                }
+//            }
+//        }
+//
+//        return if (isZoomEnabled) {
+//            scaleDetector.onTouchEvent(ev)
+//        } else {
+//            super.dispatchTouchEvent(ev)
+//        }
+//    }
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+
+        // ---------------------------------------------------------
+        // 1) Let RecyclerView receive events normally unless
+        //    we are actively dragging to select items.
+        // ---------------------------------------------------------
         if (!dragSelectActive) {
             try {
+                // DO NOT return here — just allow RV to process it
                 super.dispatchTouchEvent(ev)
             } catch (ignored: Exception) {
             }
         }
 
         when (ev.action) {
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+
                 dragSelectActive = false
                 inTopHotspot = false
                 inBottomHotspot = false
+
                 autoScrollHandler.removeCallbacks(autoScrollRunnable)
+
                 currScaleFactor = 1.0f
                 lastUp = System.currentTimeMillis()
-                return true
+
+                // Spring bounce edge effect will animate automatically
+                return super.dispatchTouchEvent(ev)
             }
 
             MotionEvent.ACTION_MOVE -> {
+
+                // ---------------------------------------------------------
+                // 2) Handle drag-selection MOVE logic
+                // ---------------------------------------------------------
                 if (dragSelectActive) {
+
                     val itemPosition = getItemPosition(ev)
+
+                    // ---------------- HOTSPOTS -----------------
                     if (hotspotHeight > -1) {
-                        if (ev.y in hotspotTopBoundStart.toFloat()..hotspotTopBoundEnd.toFloat()) {
+
+                        val y = ev.y
+
+                        // ----- TOP HOTSPOT -----
+                        if (y in hotspotTopBoundStart.toFloat()..hotspotTopBoundEnd.toFloat()) {
+
                             inBottomHotspot = false
+
                             if (!inTopHotspot) {
                                 inTopHotspot = true
                                 autoScrollHandler.removeCallbacks(autoScrollRunnable)
@@ -141,45 +261,51 @@ open class MyRecyclerView : RecyclerView {
                             }
 
                             val simulatedFactor = (hotspotTopBoundEnd - hotspotTopBoundStart).toFloat()
-                            val simulatedY = ev.y - hotspotTopBoundStart
-                            autoScrollVelocity = (simulatedFactor - simulatedY).toInt() / 2
-                        } else if (ev.y in hotspotBottomBoundStart.toFloat()..hotspotBottomBoundEnd.toFloat()) {
+                            val simulatedY = y - hotspotTopBoundStart
+                            autoScrollVelocity = ((simulatedFactor - simulatedY) / 2f).toInt()
+                        }
+
+                        // ----- BOTTOM HOTSPOT -----
+                        else if (y in hotspotBottomBoundStart.toFloat()..hotspotBottomBoundEnd.toFloat()) {
+
                             inTopHotspot = false
+
                             if (!inBottomHotspot) {
                                 inBottomHotspot = true
                                 autoScrollHandler.removeCallbacks(autoScrollRunnable)
                                 autoScrollHandler.postDelayed(autoScrollRunnable, AUTO_SCROLL_DELAY)
                             }
 
-                            val simulatedY = ev.y + hotspotBottomBoundEnd
+                            val simulatedY = y + hotspotBottomBoundEnd
                             val simulatedFactor = (hotspotBottomBoundStart + hotspotBottomBoundEnd).toFloat()
-                            autoScrollVelocity = (simulatedY - simulatedFactor).toInt() / 2
-                        } else if (inTopHotspot || inBottomHotspot) {
+                            autoScrollVelocity = ((simulatedY - simulatedFactor) / 2f).toInt()
+                        }
+
+                        // ----- OUTSIDE HOTSPOTS -----
+                        else if (inTopHotspot || inBottomHotspot) {
                             autoScrollHandler.removeCallbacks(autoScrollRunnable)
                             inTopHotspot = false
                             inBottomHotspot = false
                         }
                     }
 
+                    // ---------------- DRAG-RANGE SELECTION ----------------
                     if (itemPosition != NO_POSITION && lastDraggedIndex != itemPosition) {
+
                         lastDraggedIndex = itemPosition
-                        if (minReached == -1) {
-                            minReached = lastDraggedIndex
-                        }
 
-                        if (maxReached == -1) {
-                            maxReached = lastDraggedIndex
-                        }
+                        if (minReached == -1) minReached = lastDraggedIndex
+                        if (maxReached == -1) maxReached = lastDraggedIndex
 
-                        if (lastDraggedIndex > maxReached) {
-                            maxReached = lastDraggedIndex
-                        }
+                        if (lastDraggedIndex > maxReached) maxReached = lastDraggedIndex
+                        if (lastDraggedIndex < minReached) minReached = lastDraggedIndex
 
-                        if (lastDraggedIndex < minReached) {
-                            minReached = lastDraggedIndex
-                        }
-
-                        dragListener?.selectRange(initialSelection, lastDraggedIndex, minReached, maxReached)
+                        dragListener?.selectRange(
+                            initialSelection,
+                            lastDraggedIndex,
+                            minReached,
+                            maxReached
+                        )
 
                         if (initialSelection == lastDraggedIndex) {
                             minReached = lastDraggedIndex
@@ -187,16 +313,23 @@ open class MyRecyclerView : RecyclerView {
                         }
                     }
 
+                    // Consume move during drag-selection
                     return true
                 }
             }
         }
 
-        return if (isZoomEnabled) {
+        // ---------------------------------------------------------
+        // 3) Zoom-enabled → give event to ScaleGestureDetector
+        // ---------------------------------------------------------
+        if (isZoomEnabled) {
             scaleDetector.onTouchEvent(ev)
-        } else {
-            true
         }
+
+        // ---------------------------------------------------------
+        // 4) Default behavior (this is crucial for bouncing!)
+        // ---------------------------------------------------------
+        return super.dispatchTouchEvent(ev)
     }
 
     fun setupDragListener(dragListener: MyDragListener?) {

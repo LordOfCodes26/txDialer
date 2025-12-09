@@ -151,8 +151,8 @@ class AboutActivity : BaseComposeActivity() {
         val appId = baseConfig.appId.removeSuffix(".debug")
         val url = when (appId) {
             "com.android.dialer" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-dialer"
-            "com.goodwy.smsmessenger" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-messages"
-            "com.goodwy.contacts" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-contacts"
+            "com.android.mms" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-messages"
+            "com.android.contacts" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-contacts"
             "com.goodwy.gallery" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-gallery"
             "com.goodwy.filemanager" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-files"
             "com.goodwy.voicerecorder", "com.goodwy.voicerecorderfree" -> "https://sites.google.com/view/goodwy/about/privacy-policy-right-voice-recorder"

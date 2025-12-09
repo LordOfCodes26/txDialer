@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.provider.Settings
 import android.speech.RecognizerIntent
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -53,6 +54,8 @@ import com.android.dialer.fragments.MyViewPagerFragment
 import com.android.dialer.fragments.RecentsFragment
 import com.android.dialer.helpers.*
 import com.android.dialer.models.Events
+import douglasspgyn.com.github.circularcountdown.CircularCountdown
+import douglasspgyn.com.github.circularcountdown.listener.CircularListener
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -99,6 +102,19 @@ class MainActivity : SimpleActivity() {
         EventBus.getDefault().register(this)
         launchedDialer = savedInstanceState?.getBoolean(OPEN_DIAL_PAD_AT_LAUNCH) ?: false
         val properBackgroundColor = getProperBackgroundColor()
+
+//        binding.circularCountdown.create(3, 10, CircularCountdown.TYPE_SECOND)
+//            .listener(object : CircularListener {
+//                override fun onTick(progress: Int) {
+//                    Log.d("CHero-onTcick", progress.toString())
+//                }
+//
+//                override fun onFinish(newCycle: Boolean, cycleCount: Int) {
+//                    Log.d("CHero-onTcick", newCycle.toString())
+//
+//                }
+//            })
+//            .start()
 
         if (isDefaultDialer()) {
             checkContactPermissions()

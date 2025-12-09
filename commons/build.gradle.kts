@@ -145,7 +145,7 @@ dependencies {
     implementation(project(":strings"))
     implementation("io.github.kyant0:capsule:2.1.1")
     implementation("io.github.kyant0:backdrop:1.0.0")
-
+    implementation ("io.github.everythingme:overscroll-decor-android:1.1.1")
     api(libs.billing.client)
     api(libs.rustore.client)
     api(libs.persian.date)

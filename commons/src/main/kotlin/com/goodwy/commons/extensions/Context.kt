@@ -1085,9 +1085,9 @@ fun Context.isUsingGestureNavigation(): Boolean {
 
 // we need the Default Dialer functionality only in Simple Dialer and in Simple Contacts for now
 fun Context.isDefaultDialer(): Boolean {
-    return if (!packageName.startsWith("com.goodwy.contacts") && !packageName.startsWith("com.android.dialer")) {
+    return if (!packageName.startsWith("com.android.contacts") && !packageName.startsWith("com.android.dialer")) {
         true
-    } else if ((packageName.startsWith("com.goodwy.contacts") || packageName.startsWith("com.android.dialer")) && isQPlus()) {
+    } else if ((packageName.startsWith("com.android.contacts") || packageName.startsWith("com.android.dialer")) && isQPlus()) {
         val roleManager = getSystemService(RoleManager::class.java)
         roleManager!!.isRoleAvailable(RoleManager.ROLE_DIALER) && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
     } else {
@@ -1542,8 +1542,8 @@ fun Context.isPro() = baseConfig.isPro || baseConfig.isProSubs || baseConfig.isP
 
 fun Context.isCollection(): Boolean {
     return isPackageInstalled("com.android.dialer")
-        && isPackageInstalled("com.goodwy.contacts")
-        && isPackageInstalled("com.goodwy.smsmessenger")
+        && isPackageInstalled("com.android.contacts")
+        && isPackageInstalled("com.android.mms")
         && isPackageInstalled("com.goodwy.gallery")
         && isPackageInstalled("com.goodwy.audiobooklite")
         && isPackageInstalled("com.goodwy.filemanager")

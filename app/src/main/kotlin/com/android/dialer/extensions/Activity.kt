@@ -109,8 +109,8 @@ fun BaseSimpleActivity.callContactWithSimWithConfirmationCheck(
 
 // handle private contacts differently, only Goodwy Contacts can open them
 fun Activity.startContactDetailsIntent(contact: Contact) {
-    val simpleContacts = "com.goodwy.contacts"
-    val simpleContactsDebug = "com.goodwy.contacts.debug"
+    val simpleContacts = "com.android.contacts"
+    val simpleContactsDebug = "com.android.contacts"
     if (contact.rawId > 1000000 && contact.contactId > 1000000 && contact.rawId == contact.contactId &&
         (isPackageInstalled(simpleContacts) || isPackageInstalled(simpleContactsDebug))
     ) {
@@ -220,8 +220,8 @@ fun SimpleActivity.showSnackbar(view: View) {
 }
 
 fun Activity.launchSendSMSIntentRecommendation(recipient: String) {
-    val simpleSmsMessenger = "com.goodwy.smsmessenger"
-    val simpleSmsMessengerDebug = "com.goodwy.smsmessenger.debug"
+    val simpleSmsMessenger = "com.android.mms"
+    val simpleSmsMessengerDebug = "com.android.mms"
     if ((0..config.appRecommendationDialogCount).random() == 2
         && (!isPackageInstalled(simpleSmsMessenger)
             && !isPackageInstalled(simpleSmsMessengerDebug))
@@ -238,8 +238,8 @@ fun Activity.launchSendSMSIntentRecommendation(recipient: String) {
 }
 
 fun Activity.startContactDetailsIntentRecommendation(contact: Contact) {
-    val simpleContacts = "com.goodwy.contacts"
-    val simpleContactsDebug = "com.goodwy.contacts.debug"
+    val simpleContacts = "com.android.contacts"
+    val simpleContactsDebug = "com.android.contacts"
     if ((0..config.appRecommendationDialogCount).random() == 2
         && (!isPackageInstalled(simpleContacts)
             && !isPackageInstalled(simpleContactsDebug))

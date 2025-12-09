@@ -47,5 +47,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"/>
+<!--        <douglasspgyn.com.github.circularcountdown.CircularCountdown-->
+<!--            android:id="@+id/circularCountdown"-->
+<!--            android:layout_width="72dp"-->
+<!--            android:layout_height="72dp"-->
+<!--            app:countdownBackgroundColor="@color/red_400"-->
+<!--            app:countdownForegroundColor="@color/colorPrimary"-->
+<!--            app:countdownTextColor="@color/blue_100"-->
+<!--            app:countdownTextSize="24sp"-->
+<!--            tools:ignore="MissingConstraints" />-->
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

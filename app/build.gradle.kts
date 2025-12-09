@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.properties.Properties
 import java.io.FileInputStream
+import java.util.regex.Pattern.compile
 
 plugins {
     alias(libs.plugins.android)
@@ -161,6 +162,7 @@ dependencies {
 
     //Goodwy
     implementation("com.squareup:seismic:1.0.2")
+    implementation("com.github.douglasspgyn:CircularCountdown:0.3.0")
     implementation(libs.shortcut.badger)
     implementation(libs.behavio.rule)
     implementation(libs.rx.animation)
