@@ -963,6 +963,28 @@
                     </RelativeLayout>
 
                     <RelativeLayout
+                        android:id="@+id/settingsAutoRecallHolder"
+                        style="@style/SettingsHolderSwitchStyle">
+
+                        <com.goodwy.commons.views.MyLiquidSwitch
+                            android:id="@+id/settingsAutoRecall"
+                            style="@style/SettingsSwitchStyle"
+                            android:text="@string/auto_recall"
+                            app:switchPadding="@dimen/bigger_margin"/>
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/settingsShakeToAnswerHolder"
+                        style="@style/SettingsHolderSwitchStyle">
+
+                        <com.goodwy.commons.views.MyLiquidSwitch
+                            android:id="@+id/settingsShakeToAnswer"
+                            style="@style/SettingsSwitchStyle"
+                            android:text="@string/back_pressed_end_call"
+                            app:switchPadding="@dimen/bigger_margin"/>
+                    </RelativeLayout>
+
+                    <RelativeLayout
                         android:id="@+id/settingsQuickAnswersHolder"
                         style="@style/SettingsHolderStyle"
                         android:padding="@dimen/smaller_margin">
@@ -1384,6 +1406,7 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/settingsBackupsHolder"
                 style="@style/SettingsSectionHolder"
+                android:layout_marginBottom="@dimen/activity_margin"
                 app:cardCornerRadius="@dimen/activity_margin"
                 app:cardElevation="0dp">
 

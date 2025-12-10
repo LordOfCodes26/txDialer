@@ -44,7 +44,7 @@
     <dimen name="snackbar_bottom_margin">52dp</dimen>
 
     <!--call button-->
-    <dimen name="call_button_size">78dp</dimen>
+    <dimen name="call_button_size">56dp</dimen>
     <dimen name="vertical_bias_avatar">0.10</dimen>
     <dimen name="vertical_bias_avatar_small">0.10</dimen>
     <dimen name="vertical_bias_button">0.5</dimen>

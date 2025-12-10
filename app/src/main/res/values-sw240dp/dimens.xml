@@ -8,7 +8,7 @@
     <dimen name="name_right_margin">30dp</dimen>
 
     <!--call button-->
-    <dimen name="call_button_size">62dp</dimen>
+    <dimen name="call_button_size">56dp</dimen>
     <dimen name="vertical_bias_avatar">0.05</dimen>
     <dimen name="vertical_bias_button">0.48</dimen>
     <dimen name="vertical_bias_call_end">0.95</dimen>

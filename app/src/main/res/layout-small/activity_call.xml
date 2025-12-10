@@ -405,6 +405,42 @@
             app:layout_constraintEnd_toEndOf="@+id/callAddHolder"
             app:layout_constraintStart_toStartOf="@+id/callAddHolder"
             app:layout_constraintTop_toBottomOf="@+id/callAddHolder"/>
+        <LinearLayout
+            android:id="@+id/callRedialHolder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="42dp"
+            android:layout_marginEnd="@dimen/margin_button_horizontal"
+            android:background="@drawable/pulsing_background_ripple"
+            android:contentDescription="@string/call_add"
+            android:orientation="vertical"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/callToggleSpeaker">
+
+            <ImageView
+                android:id="@+id/call_redial"
+                android:layout_width="@dimen/call_button_size"
+                android:layout_height="@dimen/call_button_size"
+                android:padding="@dimen/bigger_margin"
+                android:src="@drawable/ic_remind_call"/>
+        </LinearLayout>
+
+        <com.goodwy.commons.views.MyTextView
+            android:id="@+id/call_redial_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/small_margin"
+            android:ellipsize="marquee"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="@string/call_redial"
+            android:textSize="@dimen/normal_text_size"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="@+id/callRedialHolder"
+            app:layout_constraintStart_toStartOf="@+id/callRedialHolder"
+            app:layout_constraintTop_toBottomOf="@+id/callRedialHolder"/>
 
         <LinearLayout
             android:id="@+id/callSwapHolder"

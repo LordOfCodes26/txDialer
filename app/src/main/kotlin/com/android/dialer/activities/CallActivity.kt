@@ -196,7 +196,7 @@ class CallActivity : SimpleActivity() {
             arrayOf(
                 callToggleMicrophone, callToggleSpeaker, callToggleHold, onHoldStatusHolder,
                 callRemind, callMessage,
-                callDialpadHolder, callAddContactHolder, callAddHolder, callSwapHolder, callMergeHolder,
+                callDialpadHolder, callAddContactHolder, callAddHolder, callRedialHolder, callSwapHolder, callMergeHolder,
                 callAcceptAndDecline
             ).forEach {
                 it.background.applyColorFilter(Color.GRAY)
@@ -240,6 +240,11 @@ class CallActivity : SimpleActivity() {
             callAddHolderParams.bottomToBottom = binding.callEnd.id
             callAddHolderParams.topMargin = 0
             binding.callAddHolder.requestLayout()
+            val callRedialHolderParams = binding.callRedialHolder.layoutParams as ConstraintLayout.LayoutParams
+            callRedialHolderParams.topToTop = binding.callEnd.id
+            callRedialHolderParams.bottomToBottom = binding.callEnd.id
+            callRedialHolderParams.topMargin = 0
+            binding.callRedialHolder.requestLayout()
             val callSwapHolderParams = binding.callSwapHolder.layoutParams as ConstraintLayout.LayoutParams
             callSwapHolderParams.topToTop = binding.callEnd.id
             callSwapHolderParams.bottomToBottom = binding.callEnd.id
@@ -501,6 +506,11 @@ class CallActivity : SimpleActivity() {
             maybePerformDialpadHapticFeedback(it)
         }
 
+        callRedialHolder.setOnClickListener {
+            redial()
+            maybePerformDialpadHapticFeedback(it)
+        }
+
         callSwapHolder.setOnClickListener {
             CallManager.swap()
             maybePerformDialpadHapticFeedback(it)
@@ -549,7 +559,7 @@ class CallActivity : SimpleActivity() {
 
         arrayOf(
             callToggleMicrophone, callDialpadHolder, callToggleHold,
-            callAddHolder, callSwapHolder, callMergeHolder, callInfo, addCallerNote, callAddContactHolder
+            callAddHolder, callRedialHolder, callSwapHolder, callMergeHolder, callInfo, addCallerNote, callAddContactHolder
         ).forEach { imageView ->
             imageView.setOnLongClickListener {
                 if (!imageView.contentDescription.isNullOrEmpty()) {
@@ -558,6 +568,10 @@ class CallActivity : SimpleActivity() {
                 true
             }
         }
+    }
+
+    private fun redial() {
+        CallManager.redial()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -1517,6 +1531,8 @@ class CallActivity : SimpleActivity() {
         binding.incomingCallHolder.beGone()
         binding.ongoingCallHolder.beVisible()
         binding.callEnd.beVisible()
+        binding.callAddHolder.beInvisible()
+        binding.callRedialHolder.beVisible()
     }
 
     private fun callRinging() {
@@ -1532,6 +1548,9 @@ class CallActivity : SimpleActivity() {
         callDurationHandler.post(updateCallDurationTask)
         maybePerformCallHapticFeedback(binding.callerNameLabel)
 //        if (config.flashForAlerts) MyCameraImpl.newInstance(this).toggleSOS()
+
+        binding.callAddHolder.beVisible()
+        binding.callRedialHolder.beInvisible()
     }
 
     private fun showPhoneAccountPicker() {

@@ -452,7 +452,7 @@ open class BaseConfig(val context: Context) {
         set(wasUpgradedFromFreeShown) = prefs.edit { putBoolean(WAS_UPGRADED_FROM_FREE_SHOWN, wasUpgradedFromFreeShown) }
 
     var wasAppRated: Boolean
-        get() = prefs.getBoolean(WAS_APP_RATED, false)
+        get() = prefs.getBoolean(WAS_APP_RATED, true)
         set(wasAppRated) = prefs.edit { putBoolean(WAS_APP_RATED, wasAppRated) }
 
     var wasSortingByNumericValueAdded: Boolean

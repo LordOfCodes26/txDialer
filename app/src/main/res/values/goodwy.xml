@@ -16,6 +16,8 @@
     <string name="call_button_style">Call button style</string>
     <string name="call_notes">Call notes</string>
     <string name="back_pressed_end_call">Back action ends the call</string>
+    <string name="auto_recall">Auto Recall</string>
+    <string name="shake_to_answer">Shake to Answer</string>
     <string name="keep_calls_in_popup">Keep calls in notifications</string>
     <string name="keep_calls_in_popup_summary">After calls are answered, they remain in your notifications and don\'t appear full-screen. This is done to avoid interrupting other apps, such as while playing a game.</string>
     <string name="busy">Busy</string>

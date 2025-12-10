@@ -55,6 +55,7 @@
     <string name="call_merge">Merge calls</string>
     <string name="call_split">Split call</string>
     <string name="call_add">Add call</string>
+    <string name="call_redial">Redial</string>
     <string name="conference_manage">Manage conference call</string>
     <string name="conference">Conference</string>
     <string name="audio_route_speaker">Speaker</string>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <me.thanel.swipeactionview.SwipeActionView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/itemContactSwipe"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -22,11 +22,11 @@
             android:id="@+id/swipeRightIcon"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:layout_marginLeft='@dimen/big_margin'
             android:layout_alignParentLeft='true'
             android:layout_centerVertical='true'
-            android:src="@drawable/ic_messages"
-            android:contentDescription="@null"/>
+            android:layout_marginLeft='@dimen/big_margin'
+            android:contentDescription="@null"
+            android:src="@drawable/ic_messages" />
     </RelativeLayout>
 
     <RelativeLayout
@@ -41,11 +41,11 @@
             android:id="@+id/swipeLeftIcon"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:layout_marginRight='@dimen/big_margin'
             android:layout_alignParentRight='true'
             android:layout_centerVertical='true'
-            android:src="@drawable/ic_delete_outline"
-            android:contentDescription="@null"/>
+            android:layout_marginRight='@dimen/big_margin'
+            android:contentDescription="@null"
+            android:src="@drawable/ic_delete_outline" />
     </RelativeLayout>
 
     <FrameLayout
@@ -58,17 +58,17 @@
             android:id="@+id/itemContactFrameSelect"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/theme_black_background_color"
             android:minHeight="@dimen/min_row_height"
             android:paddingStart="@dimen/larger_margin"
-            android:paddingTop="@dimen/medium_margin"
-            android:background="@color/theme_black_background_color">
+            android:paddingTop="@dimen/medium_margin">
 
             <ImageView
                 android:id="@+id/item_contact_image"
                 android:layout_width="@dimen/normal_icon_size"
                 android:layout_height="@dimen/normal_icon_size"
-                android:padding="@dimen/tiny_margin"
                 android:layout_marginBottom="@dimen/medium_margin"
+                android:padding="@dimen/tiny_margin"
                 android:src="@drawable/ic_person_vector"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -84,12 +84,12 @@
                 android:paddingEnd="@dimen/activity_margin"
                 android:textDirection="locale"
                 android:textSize="@dimen/big_text_size"
-                tools:text="John Doe"
-                app:layout_goneMarginBottom="@dimen/medium_margin"
-                app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toTopOf="@+id/item_contact_number"
+                app:layout_constraintEnd_toStartOf="@+id/item_contact_info_holder"
                 app:layout_constraintStart_toEndOf="@+id/item_contact_image"
-                app:layout_constraintEnd_toStartOf="@+id/item_contact_info_holder" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_goneMarginBottom="@dimen/medium_margin"
+                tools:text="John Doe" />
 
             <TextView
                 android:id="@+id/item_contact_number"
@@ -112,9 +112,9 @@
                 android:layout_height="0dp"
                 android:layout_marginBottom="@dimen/medium_margin"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
                     android:id="@+id/item_contact_info"
@@ -140,11 +140,11 @@
                 android:layout_width="0dp"
                 android:layout_height="1px"
                 android:layout_marginEnd="@dimen/activity_margin"
-                android:background="@drawable/divider_settings"
                 android:alpha="0.2"
+                android:background="@drawable/divider_settings"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="@+id/item_contact_name"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/item_contact_name" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </FrameLayout>

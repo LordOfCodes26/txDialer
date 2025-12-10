@@ -159,6 +159,8 @@ class SettingsActivity : SimpleActivity() {
         setupAlwaysShowFullscreen()
         setupKeepCallsInPopUp()
         setupBackPressedEndCall()
+        setupAutoReCall()
+        setupShakeToAnswer()
         setupQuickAnswers()
         setupCallerDescription()
         setupGroupCalls()
@@ -289,7 +291,6 @@ class SettingsActivity : SimpleActivity() {
             }
         }
     }
-
 
 
     private fun setupOptionsMenu() {
@@ -959,6 +960,26 @@ class SettingsActivity : SimpleActivity() {
             settingsBackPressedEndCallHolder.setOnClickListener {
                 settingsBackPressedEndCall.toggle()
                 config.backPressedEndCall = settingsBackPressedEndCall.isChecked
+            }
+        }
+    }
+
+    private fun setupAutoReCall() {
+        binding.apply {
+            settingsAutoRecall.isChecked = config.enableAutoRedial
+            settingsAutoRecallHolder.setOnClickListener {
+                settingsAutoRecall.toggle()
+                config.enableAutoRedial = settingsAutoRecall.isChecked
+            }
+        }
+    }
+
+    private fun setupShakeToAnswer() {
+        binding.apply {
+            settingsShakeToAnswer.isChecked = config.enableShakeToAnswer
+            settingsShakeToAnswerHolder.setOnClickListener {
+                settingsShakeToAnswer.toggle()
+                config.enableShakeToAnswer = settingsAutoRecall.isChecked
             }
         }
     }
