@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import ru.rustore.sdk.core.feature.model.FeatureAvailabilityResult
+import java.io.File
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.abs
@@ -256,21 +257,33 @@ class SettingsActivity : SimpleActivity() {
             val uri = data?.data ?: return
 
             try {
-                // Persist read permission for future access
-                // ACTION_OPEN_DOCUMENT supports takePersistableUriPermission
-                val takeFlags = data.flags and
-                    (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                // ACTION_PICK doesn't support persistable URIs, so we copy the image to internal storage
+                // This ensures we can access it even after the activity lifecycle ends
+                val inputStream = contentResolver.openInputStream(uri) ?: return
                 
-                try {
-                    contentResolver.takePersistableUriPermission(uri, takeFlags)
-                } catch (e: SecurityException) {
-                    e.printStackTrace()
-                    toast(R.string.no_storage_permissions)
-                    return
+                // Create a file in the app's internal cache directory
+                val imagesFolder = File(cacheDir, "gallery_backgrounds")
+                if (!imagesFolder.exists()) {
+                    imagesFolder.mkdirs()
                 }
-
-                // Save URI and update config
-                config.galleryBackgroundUri = uri.toString()
+                
+                val outputFile = File(imagesFolder, "background_${System.currentTimeMillis()}.jpg")
+                
+                // Copy the new image first
+                outputFile.outputStream().use { output ->
+                    inputStream.copyTo(output)
+                }
+                inputStream.close()
+                
+                // Only delete old backgrounds after successful copy
+                imagesFolder.listFiles()?.forEach { file ->
+                    if (file != outputFile) {
+                        file.delete()
+                    }
+                }
+                
+                // Save the file path as URI (file:// scheme)
+                config.galleryBackgroundUri = outputFile.toURI().toString()
                 config.backgroundCallScreen = GALLERY_BACKGROUND
 
                 // Update UI text
@@ -741,13 +754,9 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun pickGalleryImage() {
-        // Use ACTION_OPEN_DOCUMENT to get persistable URI permissions
-        // This allows the app to access the image even after activity lifecycle ends
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+        // Use ACTION_PICK to open the gallery app directly
+        val intent = Intent(Intent.ACTION_PICK).apply {
             type = "image/*"
-            addCategory(Intent.CATEGORY_OPENABLE)
-            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         try {
             startActivityForResult(intent, REQUEST_PICK_GALLERY_BACKGROUND)

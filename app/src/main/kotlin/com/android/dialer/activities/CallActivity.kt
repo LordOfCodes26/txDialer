@@ -47,6 +47,8 @@ import androidx.core.view.get
 import androidx.core.view.size
 import com.android.dialer.services.CallService
 import androidx.core.net.toUri
+import java.io.File
+import java.io.FileInputStream
 
 
 class CallActivity : SimpleActivity() {
@@ -361,8 +363,18 @@ class CallActivity : SimpleActivity() {
         val uri = uriString.toUri()
 
         try {
-            // Decode bitmap efficiently
-            val inputStream = contentResolver.openInputStream(uri) ?: return
+            // Handle both file:// and content:// URIs
+            val inputStream = when {
+                uri.scheme == "file" -> {
+                    // For file:// URIs, use FileInputStream directly
+                    java.io.FileInputStream(File(uri.path ?: return))
+                }
+                else -> {
+                    // For content:// URIs, use ContentResolver
+                    contentResolver.openInputStream(uri) ?: return
+                }
+            }
+            
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeStream(inputStream, null, options)
             inputStream.close()
@@ -372,7 +384,15 @@ class CallActivity : SimpleActivity() {
             options.inSampleSize = calculateInSampleSize(options, targetWidth, targetHeight)
             options.inJustDecodeBounds = false
 
-            val finalInputStream = contentResolver.openInputStream(uri) ?: return
+            // Handle both file:// and content:// URIs for final decode
+            val finalInputStream = when {
+                uri.scheme == "file" -> {
+                    FileInputStream(File(uri.path ?: return))
+                }
+                else -> {
+                    contentResolver.openInputStream(uri) ?: return
+                }
+            }
             val bitmap = BitmapFactory.decodeStream(finalInputStream, null, options)
             finalInputStream.close()
             if (bitmap == null) return

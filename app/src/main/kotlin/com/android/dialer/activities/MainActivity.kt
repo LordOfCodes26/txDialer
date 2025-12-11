@@ -84,7 +84,7 @@ class MainActivity : SimpleActivity() {
     @SuppressLint("MissingSuperCall")
     override fun onCreate(savedInstanceState: Bundle?) {
         isMaterialActivity = true
-        updateNavigationBarColor = false
+        updateNavigationBarColor = false // We'll set it manually with alpha in onResume
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         appLaunched(BuildConfig.APPLICATION_ID)
@@ -95,7 +95,7 @@ class MainActivity : SimpleActivity() {
         updateMaterialActivityViews(
             binding.mainCoordinator,
             binding.mainHolder,
-            useTransparentNavigation = false,
+            useTransparentNavigation = true,
             useTopSearchMenu = useBottomNavigationBar
         )
 
@@ -154,15 +154,8 @@ class MainActivity : SimpleActivity() {
             searchBeVisibleIf(useBottomNavigationBar)
         }
 
-        // TODO TRANSPARENT Navigation Bar
+        // Transparent Navigation Bar is handled by updateMaterialActivityViews with useTransparentNavigation = true
         if (!useBottomNavigationBar) {
-            setWindowTransparency(true) { _, bottomNavigationBarSize, leftNavigationBarSize, rightNavigationBarSize ->
-                binding.mainCoordinator.setPadding(leftNavigationBarSize, 0, rightNavigationBarSize, 0)
-                binding.mainDialpadButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    setMargins(0, 0, 0, bottomNavigationBarSize + pixels(R.dimen.activity_margin).toInt())
-                }
-            }
-
 //            setupTopTabs()
         } else {
             setupTabs()
@@ -184,6 +177,13 @@ class MainActivity : SimpleActivity() {
 
     override fun onResume() {
         super.onResume()
+        
+        // Set navigation bar color with alpha (semi-transparent) like SettingsActivity
+        if (isMaterialActivity) {
+            val navBarColor = getProperBackgroundColor().adjustAlpha(HIGHER_ALPHA)
+            updateNavigationBarColor(navBarColor)
+        }
+        
         if (storedShowTabs != config.showTabs || storedShowPhoneNumbers != config.showPhoneNumbers) {
             System.exit(0)
             return
