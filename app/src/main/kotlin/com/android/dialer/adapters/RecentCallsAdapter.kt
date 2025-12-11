@@ -481,7 +481,7 @@ class RecentCallsAdapter(
 
     private fun getSelectedName() = getSelectedItems().firstOrNull()?.name
 
-    private fun showPopupMenu(view: View, call: RecentCall) {
+    private fun showPopupMenu(view: View, call: RecentCall, touchX: Float = -1f) {
         finishActMode()
         val theme = activity.getPopupMenuTheme()
         val contextTheme = ContextThemeWrapper(activity, theme)
@@ -489,7 +489,14 @@ class RecentCallsAdapter(
         val selectedNumber = "tel:${call.phoneNumber}".replace("+","%2B")
         getBlockedNumbers = activity.getBlockedNumbers()
 
-        PopupMenu(contextTheme, view, Gravity.END).apply {
+        // Determine gravity based on touch position: left side = START, right side = END
+        val gravity = if (touchX >= 0 && touchX < view.width / 2) {
+            Gravity.START
+        } else {
+            Gravity.END
+        }
+
+        PopupMenu(contextTheme, view, gravity).apply {
             inflate(R.menu.menu_recent_item_options)
             menu.apply {
                 val areMultipleSIMsAvailable = activity.areMultipleSIMsAvailable()
@@ -620,6 +627,57 @@ class RecentCallsAdapter(
                 true
             }
             show()
+            
+            // Adjust X position based on touch location using reflection
+            if (touchX >= 0) {
+                try {
+                    // Access PopupMenu's internal PopupWindow to adjust X position
+                    val popupField = PopupMenu::class.java.getDeclaredField("mPopup")
+                    popupField.isAccessible = true
+                    val menuPopup = popupField.get(this)
+                    
+                    val popupWindowField = menuPopup.javaClass.getDeclaredField("mPopup")
+                    popupWindowField.isAccessible = true
+                    val popupWindow = popupWindowField.get(menuPopup) as android.widget.PopupWindow
+                    
+                    // Calculate X offset: center menu on touch point
+                    view.post {
+                        val location = IntArray(2)
+                        view.getLocationOnScreen(location)
+                        val viewX = location[0]
+                        val screenWidth = activity.resources.displayMetrics.widthPixels
+                        
+                        // Get menu width (approximate or measure)
+                        val menuWidth = (screenWidth * 0.6).toInt()
+                        val offset = activity.resources.getDimensionPixelSize(com.goodwy.commons.R.dimen.smaller_margin)
+                        
+                        // Calculate desired X position based on touch location
+                        val touchXInt = touchX.toInt()
+                        val isLeftSide = touchXInt < view.width / 2
+                        var menuX: Int = if (isLeftSide) {
+                            // Menu starts at touchX with offset
+                            viewX + touchXInt + offset
+                        } else {
+                            // Menu ends at touchX with offset
+                            viewX + touchXInt - menuWidth - offset
+                        }
+                        
+                        // Keep within screen bounds
+                        if (menuX < 0) menuX = 0
+                        if (menuX + menuWidth > screenWidth) menuX = screenWidth - menuWidth
+                        
+                        // Get current Y position
+                        val yLocation = IntArray(2)
+                        view.getLocationOnScreen(yLocation)
+                        val yOffset = yLocation[1] + view.height
+                        
+                        // Update popup position
+                        popupWindow.update(menuX, yOffset, -1, -1)
+                    }
+                } catch (e: Exception) {
+                    // If reflection fails, use default positioning
+                }
+            }
         }
     }
 
@@ -630,13 +688,26 @@ class RecentCallsAdapter(
     }
 
     private inner class RecentCallViewHolder(val binding: ItemRecentCallBinding) : ViewHolder(binding.root) {
-        @SuppressLint("SetTextI18n")
-        fun bind(call: RecentCall) = bindView(
-            item = call,
-            allowSingleClick = (refreshItemsListener != null || isDialpad) && !call.isUnknownNumber,
-            allowLongClick = (refreshItemsListener != null || isDialpad) && !call.isUnknownNumber
-        ) { _, _ ->
-            binding.apply {
+        private var lastTouchX: Float = -1f
+        
+        @SuppressLint("SetTextI18n", "ClickableViewAccessibility")
+        fun bind(call: RecentCall) {
+            bindView(
+                item = call,
+                allowSingleClick = (refreshItemsListener != null || isDialpad) && !call.isUnknownNumber,
+                allowLongClick = false  // Disable default action mode, we'll show popup menu instead
+            ) { itemView, _ ->
+                binding.apply {
+                    // Track touch position for popup menu positioning
+                    if ((refreshItemsListener != null || isDialpad) && !call.isUnknownNumber) {
+                        itemView.setOnTouchListener { view, event ->
+                            if (event.action == android.view.MotionEvent.ACTION_DOWN || 
+                                event.action == android.view.MotionEvent.ACTION_MOVE) {
+                                lastTouchX = event.x
+                            }
+                            false  // Don't consume the event
+                        }
+                    }
                 val currentFontSize = fontSize
                 itemRecentsHolder.isSelected = selectedKeys.contains(call.id)
                 itemRecentsHolder.setupViewBackground(activity)
@@ -761,8 +832,17 @@ class RecentCallsAdapter(
                                     viewClicked(call)
                                 }
                             }
+                            // Track touch position for popup menu positioning
+                            var imageTouchX: Float = -1f
+                            setOnTouchListener { view, event ->
+                                if (event.action == android.view.MotionEvent.ACTION_DOWN || 
+                                    event.action == android.view.MotionEvent.ACTION_MOVE) {
+                                    imageTouchX = event.x
+                                }
+                                false  // Don't consume the event
+                            }
                             setOnLongClickListener {
-                                viewLongClicked()
+                                showPopupMenu(itemRecentsHolder, call, imageTouchX)
                                 true
                             }
                         }
@@ -790,7 +870,7 @@ class RecentCallsAdapter(
                         }
                     }
                     setOnLongClickListener {
-                        showPopupMenu(overflowMenuAnchor, call)
+                        showPopupMenu(overflowMenuAnchor, call, -1f)
                         true
                     }
                 }
@@ -806,22 +886,43 @@ class RecentCallsAdapter(
                         }
                     }
                     setOnLongClickListener {
-                        showPopupMenu(overflowMenuAnchor, call)
+                        showPopupMenu(overflowMenuAnchor, call, -1f)
                         true
                     }
+                }
+                }
+            }
+            // Set long click listener AFTER bindView to override the default behavior
+            if ((refreshItemsListener != null || isDialpad) && !call.isUnknownNumber) {
+                itemView.setOnLongClickListener {
+                    showPopupMenu(binding.itemRecentsHolder, call, lastTouchX)
+                    true
                 }
             }
         }
     }
 
     private inner class RecentCallSwipeViewHolder(val binding: ItemRecentCallSwipeBinding) : ViewHolder(binding.root) {
-        @SuppressLint("SetTextI18n")
-        fun bind(call: RecentCall) = bindView(
-            item = call,
-            allowSingleClick = (refreshItemsListener != null || isDialpad) && !call.isUnknownNumber,
-            allowLongClick = (refreshItemsListener != null || isDialpad) && !call.isUnknownNumber
-        ) { _, _ ->
-            binding.apply {
+        private var lastTouchX: Float = -1f
+        
+        @SuppressLint("SetTextI18n", "ClickableViewAccessibility")
+        fun bind(call: RecentCall) {
+            bindView(
+                item = call,
+                allowSingleClick = (refreshItemsListener != null || isDialpad) && !call.isUnknownNumber,
+                allowLongClick = false  // Disable default action mode, we'll show popup menu instead
+            ) { itemView, _ ->
+                binding.apply {
+                    // Track touch position for popup menu positioning
+                    if ((refreshItemsListener != null || isDialpad) && !call.isUnknownNumber) {
+                        itemView.setOnTouchListener { view, event ->
+                            if (event.action == android.view.MotionEvent.ACTION_DOWN || 
+                                event.action == android.view.MotionEvent.ACTION_MOVE) {
+                                lastTouchX = event.x
+                            }
+                            false  // Don't consume the event
+                        }
+                    }
                 itemRecentsFrameSelect.setupViewBackground(activity)
 
                 if (activity.isDynamicTheme() && !activity.isSystemInDarkMode()) {
@@ -951,8 +1052,17 @@ class RecentCallsAdapter(
                                     viewClicked(call)
                                 }
                             }
+                            // Track touch position for popup menu positioning
+                            var imageTouchX: Float = -1f
+                            setOnTouchListener { view, event ->
+                                if (event.action == android.view.MotionEvent.ACTION_DOWN || 
+                                    event.action == android.view.MotionEvent.ACTION_MOVE) {
+                                    imageTouchX = event.x
+                                }
+                                false  // Don't consume the event
+                            }
                             setOnLongClickListener {
-                                viewLongClicked()
+                                showPopupMenu(itemRecentsHolder, call, imageTouchX)
                                 true
                             }
                         }
@@ -980,7 +1090,7 @@ class RecentCallsAdapter(
                         }
                     }
                     setOnLongClickListener {
-                        showPopupMenu(overflowMenuAnchor, call)
+                        showPopupMenu(overflowMenuAnchor, call, -1f)
                         true
                     }
                 }
@@ -996,7 +1106,7 @@ class RecentCallsAdapter(
                         }
                     }
                     setOnLongClickListener {
-                        showPopupMenu(overflowMenuAnchor, call)
+                        showPopupMenu(overflowMenuAnchor, call, -1f)
                         true
                     }
                 }
@@ -1057,6 +1167,14 @@ class RecentCallsAdapter(
                         if (swipedRight) slideRightReturn(swipeRightIcon, swipeRightIconHolder)
                         else slideLeftReturn(swipeLeftIcon, swipeLeftIconHolder)
                     }
+                }
+                }
+            }
+            // Set long click listener AFTER bindView to override the default behavior
+            if ((refreshItemsListener != null || isDialpad) && !call.isUnknownNumber) {
+                itemView.setOnLongClickListener {
+                    showPopupMenu(binding.itemRecentsHolder, call, lastTouchX)
+                    true
                 }
             }
         }

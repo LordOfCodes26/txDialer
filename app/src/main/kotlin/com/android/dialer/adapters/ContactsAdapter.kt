@@ -16,6 +16,7 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -170,9 +171,32 @@ class ContactsAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contacts[position]
-        holder.bindView(contact, true, allowLongClick) { itemView, _ ->
+        var lastTouchX: Float = -1f
+        
+        holder.bindView(contact, true, false) { itemView, _ ->  // Disable default action mode, we'll show popup menu instead
             val viewType = getItemViewType(position)
             setupView(Binding.getByItemViewType(viewType, activity.config.useSwipeToAction).bind(itemView), contact, holder)
+            
+            // Track touch position for popup menu positioning
+            if (allowLongClick) {
+                itemView.setOnTouchListener { view, event ->
+                    if (event.action == android.view.MotionEvent.ACTION_DOWN || 
+                        event.action == android.view.MotionEvent.ACTION_MOVE) {
+                        lastTouchX = event.x
+                        // Store in view tag
+                        view.tag = lastTouchX
+                    }
+                    false  // Don't consume the event
+                }
+            }
+        }
+        // Set long click listener AFTER bindView to override the default behavior
+        if (allowLongClick) {
+            holder.itemView.setOnLongClickListener { view ->
+                val touchX = (view.tag as? Float) ?: lastTouchX
+                showPopupMenu(holder.itemView, contact, touchX)
+                true
+            }
         }
         bindViewHolder(holder)
     }
@@ -451,8 +475,17 @@ class ContactsAdapter(
                             holder.viewClicked(contact)
                         }
                     }
+                    // Track touch position for popup menu positioning
+                    var imageTouchX: Float = -1f
+                    setOnTouchListener { view, event ->
+                        if (event.action == android.view.MotionEvent.ACTION_DOWN || 
+                            event.action == android.view.MotionEvent.ACTION_MOVE) {
+                            imageTouchX = event.x
+                        }
+                        false  // Don't consume the event
+                    }
                     setOnLongClickListener {
-                        holder.viewLongClicked()
+                        showPopupMenu(holder.itemView, contact, imageTouchX)
                         true
                     }
                 }
@@ -854,6 +887,151 @@ class ContactsAdapter(
     }
     private fun viewContactInfo(contact: Contact) {
         activity.startContactDetailsIntentRecommendation(contact)
+    }
+
+    private fun showPopupMenu(view: View, contact: Contact, touchX: Float = -1f) {
+        finishActMode()
+        val theme = activity.getPopupMenuTheme()
+        val contextTheme = android.view.ContextThemeWrapper(activity, theme)
+        val hasMultipleSIMs = activity.areMultipleSIMsAvailable()
+        val selectedNumber = getContactPhoneNumber(contact)?.replace("+","%2B") ?: ""
+
+        // Determine gravity based on touch position: left side = START, right side = END
+        val gravity = if (touchX >= 0 && touchX < view.width / 2) {
+            Gravity.START
+        } else {
+            Gravity.END
+        }
+
+        PopupMenu(contextTheme, view, gravity).apply {
+            inflate(R.menu.cab_contacts)
+            menu.apply {
+                findItem(R.id.cab_call).isVisible = !hasMultipleSIMs
+                findItem(R.id.cab_call_sim_1).isVisible = hasMultipleSIMs
+                findItem(R.id.cab_call_sim_2).isVisible = hasMultipleSIMs
+                findItem(R.id.cab_remove_default_sim).isVisible = (activity.config.getCustomSIM(selectedNumber) ?: "") != ""
+                findItem(R.id.cab_delete).isVisible = showDeleteButton
+                findItem(R.id.cab_create_shortcut).isVisible = true
+                findItem(R.id.cab_view_details).isVisible = true
+                findItem(R.id.cab_block_unblock_contact).isVisible = true
+                findItem(R.id.cab_select_all).isVisible = false  // Hide select all in popup menu
+                
+                // Update block/unblock title asynchronously
+                activity.isContactBlocked(contact) { blocked ->
+                    val titleRes = if (blocked) R.string.unblock_contact else R.string.block_contact
+                    findItem(R.id.cab_block_unblock_contact)?.title = activity.getString(titleRes)
+                }
+            }
+            setOnMenuItemClickListener { item ->
+                selectedKeys.add(contact.rawId)
+                when (item.itemId) {
+                    R.id.cab_call -> {
+                        executeItemMenuOperation(contact.rawId) {
+                            callContact()
+                        }
+                    }
+                    R.id.cab_call_sim_1 -> {
+                        executeItemMenuOperation(contact.rawId) {
+                            callContact(true)
+                        }
+                    }
+                    R.id.cab_call_sim_2 -> {
+                        executeItemMenuOperation(contact.rawId) {
+                            callContact(false)
+                        }
+                    }
+                    R.id.cab_remove_default_sim -> {
+                        executeItemMenuOperation(contact.rawId) {
+                            removeDefaultSIM()
+                        }
+                    }
+                    R.id.cab_send_sms -> {
+                        executeItemMenuOperation(contact.rawId) {
+                            sendSMS()
+                        }
+                    }
+                    R.id.cab_view_details -> {
+                        executeItemMenuOperation(contact.rawId) {
+                            viewContactDetails()
+                        }
+                    }
+                    R.id.cab_create_shortcut -> {
+                        executeItemMenuOperation(contact.rawId) {
+                            createShortcut()
+                        }
+                    }
+                    R.id.cab_block_unblock_contact -> {
+                        tryBlockingUnblocking()
+                    }
+                    R.id.cab_delete -> {
+                        askConfirmDelete()
+                    }
+                }
+                true
+            }
+            show()
+            
+            // Adjust X position based on touch location using reflection
+            if (touchX >= 0) {
+                try {
+                    // Access PopupMenu's internal PopupWindow to adjust X position
+                    val popupField = PopupMenu::class.java.getDeclaredField("mPopup")
+                    popupField.isAccessible = true
+                    val menuPopup = popupField.get(this)
+                    
+                    val popupWindowField = menuPopup.javaClass.getDeclaredField("mPopup")
+                    popupWindowField.isAccessible = true
+                    val popupWindow = popupWindowField.get(menuPopup) as android.widget.PopupWindow
+                    
+                    // Calculate X offset: center menu on touch point
+                    view.post {
+                        val location = IntArray(2)
+                        view.getLocationOnScreen(location)
+                        val viewX = location[0]
+                        val screenWidth = activity.resources.displayMetrics.widthPixels
+                        
+                        // Get menu width (approximate or measure)
+                        val menuWidth = (screenWidth * 0.6).toInt()
+                        val offset = activity.resources.getDimensionPixelSize(com.goodwy.commons.R.dimen.smaller_margin)
+                        
+                        // Calculate desired X position based on touch location
+                        val touchXInt = touchX.toInt()
+                        val isLeftSide = touchXInt < view.width / 2
+                        var menuX: Int = if (isLeftSide) {
+                            // Menu starts at touchX with offset
+                            viewX + touchXInt + offset
+                        } else {
+                            // Menu ends at touchX with offset
+                            viewX + touchXInt - menuWidth - offset
+                        }
+                        
+                        // Keep within screen bounds
+                        if (menuX < 0) menuX = 0
+                        if (menuX + menuWidth > screenWidth) menuX = screenWidth - menuWidth
+                        
+                        // Get current Y position
+                        val yLocation = IntArray(2)
+                        view.getLocationOnScreen(yLocation)
+                        val yOffset = yLocation[1] + view.height
+                        
+                        // Update popup position
+                        popupWindow.update(menuX, yOffset, -1, -1)
+                    }
+                } catch (e: Exception) {
+                    // If reflection fails, use default positioning
+                }
+            }
+        }
+    }
+
+    private fun executeItemMenuOperation(contactId: Int, callback: () -> Unit) {
+        selectedKeys.add(contactId)
+        callback()
+        selectedKeys.remove(contactId)
+    }
+
+    private fun getContactPhoneNumber(contact: Contact): String? {
+        return contact.getPrimaryNumber()
     }
 
     private fun swipeActionImageResource(swipeAction: Int): Int {
