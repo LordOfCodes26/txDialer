@@ -20,6 +20,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -241,16 +242,34 @@ class ContactsAdapter(
         }
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     fun updateItems(newItems: List<Contact>, highlightText: String = "") {
-        if (newItems.hashCode() != contacts.hashCode()) {
-            contacts = ArrayList(newItems)
+        val oldItems = contacts.toList()
+        val highlightChanged = textToHighlight != highlightText
+        
+        if (newItems.hashCode() != contacts.hashCode() || highlightChanged) {
             textToHighlight = highlightText
-            notifyDataSetChanged()
-            finishActMode()
-        } else if (textToHighlight != highlightText) {
-            textToHighlight = highlightText
-            notifyDataSetChanged()
+            
+            if (newItems.hashCode() != contacts.hashCode()) {
+                val diffCallback = ContactDiffCallback(oldItems, newItems)
+                val diffResult = DiffUtil.calculateDiff(diffCallback, false)
+                contacts = ArrayList(newItems)
+                diffResult.dispatchUpdatesTo(this)
+                finishActMode()
+            } else {
+                // Only highlight changed, notify visible items
+                val layoutManager = recyclerView.layoutManager
+                if (layoutManager is androidx.recyclerview.widget.LinearLayoutManager) {
+                    val firstVisible = layoutManager.findFirstVisibleItemPosition()
+                    val lastVisible = layoutManager.findLastVisibleItemPosition()
+                    if (firstVisible != RecyclerView.NO_POSITION && lastVisible != RecyclerView.NO_POSITION) {
+                        for (i in firstVisible..lastVisible) {
+                            notifyItemChanged(i, "highlight")
+                        }
+                    }
+                } else {
+                    notifyDataSetChanged()
+                }
+            }
         }
     }
 
@@ -897,5 +916,28 @@ class ContactsAdapter(
                 initiateCall(contact) { launchCallIntent(it, key = BuildConfig.RIGHT_APP_KEY) }
             }
         }
+    }
+}
+
+class ContactDiffCallback(
+    private val oldList: List<Contact>,
+    private val newList: List<Contact>
+) : DiffUtil.Callback() {
+    
+    override fun getOldListSize(): Int = oldList.size
+    
+    override fun getNewListSize(): Int = newList.size
+    
+    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        return oldList[oldItemPosition].rawId == newList[newItemPosition].rawId
+    }
+    
+    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        val oldItem = oldList[oldItemPosition]
+        val newItem = newList[newItemPosition]
+        return oldItem.getNameToDisplay() == newItem.getNameToDisplay() &&
+                oldItem.photoUri == newItem.photoUri &&
+                oldItem.starred == newItem.starred &&
+                oldItem.phoneNumbers.firstOrNull()?.value == newItem.phoneNumbers.firstOrNull()?.value
     }
 }

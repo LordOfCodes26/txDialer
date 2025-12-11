@@ -2,6 +2,8 @@ package com.android.dialer.fragments
 
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import androidx.recyclerview.widget.RecyclerView
 import com.goodwy.commons.adapters.MyRecyclerViewAdapter
@@ -19,11 +21,15 @@ import com.android.dialer.extensions.setupWithContacts
 import com.android.dialer.extensions.startCallWithConfirmationCheck
 import com.android.dialer.extensions.startContactDetailsIntentRecommendation
 import com.android.dialer.interfaces.RefreshItemsListener
+import java.util.concurrent.Executors
 
 class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPagerFragment<MyViewPagerFragment.LettersInnerBinding>(context, attributeSet),
     RefreshItemsListener {
     private lateinit var binding: FragmentLettersLayoutBinding
     private var allContacts = ArrayList<Contact>()
+    private val handler = Handler(Looper.getMainLooper())
+    private val backgroundExecutor = Executors.newSingleThreadExecutor()
+    private var searchDebounceRunnable: Runnable? = null
 
     override fun onFinishInflate() {
         super.onFinishInflate()
@@ -130,6 +136,16 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPag
             }
 
             if (binding.fragmentList.adapter == null) {
+                // Optimize RecyclerView for large lists
+                binding.fragmentList.apply {
+                    setHasFixedSize(true)
+                    setItemViewCacheSize(20) // Increase cache size for smoother scrolling
+                    // Disable animations for large lists to improve performance
+                    if (contacts.size > 500) {
+                        itemAnimator = null
+                    }
+                }
+                
                 ContactsAdapter(
                     activity = activity as SimpleActivity,
                     contacts = contacts,
@@ -147,29 +163,57 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPag
                     binding.fragmentList.adapter = this
                 }
 
-                if (context.areSystemAnimationsEnabled) {
+                if (context.areSystemAnimationsEnabled && contacts.size <= 500) {
                     binding.fragmentList.scheduleLayoutAnimation()
                 }
             } else {
                 (binding.fragmentList.adapter as ContactsAdapter).updateItems(contacts)
             }
 
-            try {
-                //Decrease the font size based on the number of letters in the letter scroller
-                val allNotEmpty = contacts.filter { it.getNameToDisplay().isNotEmpty() }
-                val all = allNotEmpty.map { it.getNameToDisplay().substring(0, 1) }
-                val unique: Set<String> = HashSet(all)
-                val sizeUnique = unique.size
-                if (isHighScreenSize()) {
-                    if (sizeUnique > 48) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTooTiny
-                    else if (sizeUnique > 37) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTiny
-                    else binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleSmall
-                } else {
-                    if (sizeUnique > 36) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTooTiny
-                    else if (sizeUnique > 30) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTiny
-                    else binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleSmall
+            // Move expensive letter calculation to background thread for large lists
+            if (contacts.size > 500) {
+                backgroundExecutor.execute {
+                    try {
+                        val allNotEmpty = contacts.filter { it.getNameToDisplay().isNotEmpty() }
+                        val all = allNotEmpty.map { it.getNameToDisplay().substring(0, 1) }
+                        val unique: Set<String> = HashSet(all)
+                        val sizeUnique = unique.size
+                        val textAppearanceRes = if (isHighScreenSize()) {
+                            when {
+                                sizeUnique > 48 -> R.style.LetterFastscrollerStyleTooTiny
+                                sizeUnique > 37 -> R.style.LetterFastscrollerStyleTiny
+                                else -> R.style.LetterFastscrollerStyleSmall
+                            }
+                        } else {
+                            when {
+                                sizeUnique > 36 -> R.style.LetterFastscrollerStyleTooTiny
+                                sizeUnique > 30 -> R.style.LetterFastscrollerStyleTiny
+                                else -> R.style.LetterFastscrollerStyleSmall
+                            }
+                        }
+                        handler.post {
+                            binding.letterFastscroller.textAppearanceRes = textAppearanceRes
+                        }
+                    } catch (_: Exception) { }
                 }
-            } catch (_: Exception) { }
+            } else {
+                try {
+                    //Decrease the font size based on the number of letters in the letter scroller
+                    val allNotEmpty = contacts.filter { it.getNameToDisplay().isNotEmpty() }
+                    val all = allNotEmpty.map { it.getNameToDisplay().substring(0, 1) }
+                    val unique: Set<String> = HashSet(all)
+                    val sizeUnique = unique.size
+                    if (isHighScreenSize()) {
+                        if (sizeUnique > 48) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTooTiny
+                        else if (sizeUnique > 37) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTiny
+                        else binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleSmall
+                    } else {
+                        if (sizeUnique > 36) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTooTiny
+                        else if (sizeUnique > 30) binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleTiny
+                        else binding.letterFastscroller.textAppearanceRes = R.style.LetterFastscrollerStyleSmall
+                    }
+                } catch (_: Exception) { }
+            }
         }
     }
 
@@ -192,30 +236,73 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPag
     }
 
     override fun onSearchQueryChanged(text: String) {
-        val fixedText = text.trim().replace("\\s+".toRegex(), " ")
-        val shouldNormalize = fixedText.normalizeString() == fixedText
-        val filtered = allContacts.filter { contact ->
-            getProperText(contact.getNameToDisplay(), shouldNormalize).contains(fixedText, true) ||
-                getProperText(contact.nickname, shouldNormalize).contains(fixedText, true) ||
-                (fixedText.toIntOrNull() != null && contact.doesContainPhoneNumber(fixedText, true)) ||
-                contact.emails.any { it.value.contains(fixedText, true) } ||
-                contact.relations.any { it.name.contains(fixedText, true) } ||
-                contact.addresses.any { getProperText(it.value, shouldNormalize).contains(fixedText, true) } ||
-                contact.IMs.any { it.value.contains(fixedText, true) } ||
-                getProperText(contact.notes, shouldNormalize).contains(fixedText, true) ||
-                getProperText(contact.organization.company, shouldNormalize).contains(fixedText, true) ||
-                getProperText(contact.organization.jobPosition, shouldNormalize).contains(fixedText, true) ||
-                contact.websites.any { it.contains(fixedText, true) }
-        } as ArrayList
+        // Cancel previous debounce
+        searchDebounceRunnable?.let { handler.removeCallbacks(it) }
+        
+        // Debounce search for better performance with large lists
+        searchDebounceRunnable = Runnable {
+            val fixedText = text.trim().replace("\\s+".toRegex(), " ")
+            
+            // Move filtering to background thread for large lists
+            if (allContacts.size > 500) {
+                backgroundExecutor.execute {
+                    val shouldNormalize = fixedText.normalizeString() == fixedText
+                    val filtered = allContacts.filter { contact ->
+                        getProperText(contact.getNameToDisplay(), shouldNormalize).contains(fixedText, true) ||
+                            getProperText(contact.nickname, shouldNormalize).contains(fixedText, true) ||
+                            (fixedText.toIntOrNull() != null && contact.doesContainPhoneNumber(fixedText, true)) ||
+                            contact.emails.any { it.value.contains(fixedText, true) } ||
+                            contact.relations.any { it.name.contains(fixedText, true) } ||
+                            contact.addresses.any { getProperText(it.value, shouldNormalize).contains(fixedText, true) } ||
+                            contact.IMs.any { it.value.contains(fixedText, true) } ||
+                            getProperText(contact.notes, shouldNormalize).contains(fixedText, true) ||
+                            getProperText(contact.organization.company, shouldNormalize).contains(fixedText, true) ||
+                            getProperText(contact.organization.jobPosition, shouldNormalize).contains(fixedText, true) ||
+                            contact.websites.any { it.contains(fixedText, true) }
+                    } as ArrayList
 
-        filtered.sortBy {
-            val nameToDisplay = it.getNameToDisplay()
-            !getProperText(nameToDisplay, shouldNormalize).startsWith(fixedText, true) && !nameToDisplay.contains(fixedText, true)
+                    filtered.sortBy {
+                        val nameToDisplay = it.getNameToDisplay()
+                        !getProperText(nameToDisplay, shouldNormalize).startsWith(fixedText, true) && !nameToDisplay.contains(fixedText, true)
+                    }
+
+                    handler.post {
+                        binding.fragmentPlaceholder.beVisibleIf(filtered.isEmpty())
+                        (binding.fragmentList.adapter as? ContactsAdapter)?.updateItems(filtered, fixedText)
+                        setupLetterFastScroller(filtered)
+                    }
+                }
+            } else {
+                // For smaller lists, filter on main thread
+                val shouldNormalize = fixedText.normalizeString() == fixedText
+                val filtered = allContacts.filter { contact ->
+                    getProperText(contact.getNameToDisplay(), shouldNormalize).contains(fixedText, true) ||
+                        getProperText(contact.nickname, shouldNormalize).contains(fixedText, true) ||
+                        (fixedText.toIntOrNull() != null && contact.doesContainPhoneNumber(fixedText, true)) ||
+                        contact.emails.any { it.value.contains(fixedText, true) } ||
+                        contact.relations.any { it.name.contains(fixedText, true) } ||
+                        contact.addresses.any { getProperText(it.value, shouldNormalize).contains(fixedText, true) } ||
+                        contact.IMs.any { it.value.contains(fixedText, true) } ||
+                        getProperText(contact.notes, shouldNormalize).contains(fixedText, true) ||
+                        getProperText(contact.organization.company, shouldNormalize).contains(fixedText, true) ||
+                        getProperText(contact.organization.jobPosition, shouldNormalize).contains(fixedText, true) ||
+                        contact.websites.any { it.contains(fixedText, true) }
+                } as ArrayList
+
+                filtered.sortBy {
+                    val nameToDisplay = it.getNameToDisplay()
+                    !getProperText(nameToDisplay, shouldNormalize).startsWith(fixedText, true) && !nameToDisplay.contains(fixedText, true)
+                }
+
+                binding.fragmentPlaceholder.beVisibleIf(filtered.isEmpty())
+                (binding.fragmentList.adapter as? ContactsAdapter)?.updateItems(filtered, fixedText)
+                setupLetterFastScroller(filtered)
+            }
         }
-
-        binding.fragmentPlaceholder.beVisibleIf(filtered.isEmpty())
-        (binding.fragmentList.adapter as? ContactsAdapter)?.updateItems(filtered, fixedText)
-        setupLetterFastScroller(filtered)
+        
+        // Debounce delay: 150ms for small lists, 300ms for large lists
+        val delay = if (allContacts.size > 500) 300L else 150L
+        searchDebounceRunnable?.let { handler.postDelayed(it, delay) }
     }
 
     private fun requestReadContactsPermission() {
