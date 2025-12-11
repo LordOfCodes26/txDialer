@@ -60,8 +60,7 @@ class SettingsActivity : SimpleActivity() {
         }
 
 
-        private const val REQUEST_PICK_GALLERY_BACKGROUND = 1001
-        private const val REQUEST_PICK_GALLERY_BACKGROUND_PERMISSION = 1002
+        private const val REQUEST_PICK_GALLERY_BACKGROUND = 2001
     }
 
     private val purchaseHelper = PurchaseHelper(this)
@@ -257,16 +256,17 @@ class SettingsActivity : SimpleActivity() {
             val uri = data?.data ?: return
 
             try {
-                // Persist read permission for future access (if supported)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    try {
-                        val takeFlags = data.flags and
-                            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                        contentResolver.takePersistableUriPermission(uri, takeFlags)
-                    } catch (e: SecurityException) {
-                        e.printStackTrace()
-                        toast("Permission not granted for this image")
-                    }
+                // Persist read permission for future access
+                // ACTION_OPEN_DOCUMENT supports takePersistableUriPermission
+                val takeFlags = data.flags and
+                    (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                
+                try {
+                    contentResolver.takePersistableUriPermission(uri, takeFlags)
+                } catch (e: SecurityException) {
+                    e.printStackTrace()
+                    toast(R.string.no_storage_permissions)
+                    return
                 }
 
                 // Save URI and update config
@@ -276,18 +276,9 @@ class SettingsActivity : SimpleActivity() {
                 // Update UI text
                 binding.settingsBackgroundCallScreen.text = getBackgroundCallScreenText()
 
-                // Show thumbnail in the settings
-//                binding.settingsBackgroundThumbnail.visibility = View.VISIBLE
-//                Glide.with(this)
-//                    .load(uri)
-//                    .centerCrop()
-//                    .into(binding.settingsBackgroundThumbnail)
-
-                toast("Gallery background selected") // Optional feedback
-
             } catch (e: Exception) {
                 e.printStackTrace()
-                toast("Unable to set gallery background")
+                toast(R.string.no_storage_permissions)
             }
         }
     }
@@ -720,7 +711,23 @@ class SettingsActivity : SimpleActivity() {
                     }
 
                     GALLERY_BACKGROUND -> {
-                        pickGalleryImage()
+                        // On Android 10+ (API 29+), ACTION_PICK doesn't require storage permissions
+                        // For older versions, we still check permissions for consistency
+                        if (isQPlus()) {
+                            pickGalleryImage()
+                        } else {
+                            if (hasPermission(PERMISSION_READ_STORAGE)) {
+                                pickGalleryImage()
+                            } else {
+                                handlePermission(PERMISSION_READ_STORAGE) { permission ->
+                                    if (permission) {
+                                        pickGalleryImage()
+                                    } else {
+                                        toast(R.string.no_storage_permissions)
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     else -> {
@@ -734,24 +741,20 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun pickGalleryImage() {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        }
-
-        // Check permission
-        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-            // Request permission
-            ActivityCompat.requestPermissions(this, arrayOf(permission), REQUEST_PICK_GALLERY_BACKGROUND_PERMISSION)
-            return
-        }
-
-        // Permission granted, launch gallery
-        val intent = Intent(Intent.ACTION_PICK).apply {
+        // Use ACTION_OPEN_DOCUMENT to get persistable URI permissions
+        // This allows the app to access the image even after activity lifecycle ends
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             type = "image/*"
+            addCategory(Intent.CATEGORY_OPENABLE)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        startActivityForResult(intent, REQUEST_PICK_GALLERY_BACKGROUND)
+        try {
+            startActivityForResult(intent, REQUEST_PICK_GALLERY_BACKGROUND)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            toast(R.string.no_app_found)
+        }
     }
 
 
@@ -766,21 +769,6 @@ class SettingsActivity : SimpleActivity() {
         }
     )
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == REQUEST_PICK_GALLERY_BACKGROUND_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                pickGalleryImage()
-            } else {
-                Toast.makeText(this, R.string.no_storage_permissions, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
 
     private fun setupTransparentCallScreen() {
