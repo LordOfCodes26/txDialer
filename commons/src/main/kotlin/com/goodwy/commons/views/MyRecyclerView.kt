@@ -206,18 +206,6 @@ open class MyRecyclerView : RecyclerView {
 //    }
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
 
-        // ---------------------------------------------------------
-        // 1) Let RecyclerView receive events normally unless
-        //    we are actively dragging to select items.
-        // ---------------------------------------------------------
-        if (!dragSelectActive) {
-            try {
-                // DO NOT return here — just allow RV to process it
-                super.dispatchTouchEvent(ev)
-            } catch (ignored: Exception) {
-            }
-        }
-
         when (ev.action) {
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -238,7 +226,7 @@ open class MyRecyclerView : RecyclerView {
             MotionEvent.ACTION_MOVE -> {
 
                 // ---------------------------------------------------------
-                // 2) Handle drag-selection MOVE logic
+                // Handle drag-selection MOVE logic
                 // ---------------------------------------------------------
                 if (dragSelectActive) {
 
@@ -313,23 +301,28 @@ open class MyRecyclerView : RecyclerView {
                         }
                     }
 
-                    // Consume move during drag-selection
-                    return true
+                    // IMPORTANT: Still allow RecyclerView to process the event for overscroll
+                    // Don't consume the event - let it propagate so BouncyEdgeEffectFactory can work
                 }
             }
         }
 
         // ---------------------------------------------------------
-        // 3) Zoom-enabled → give event to ScaleGestureDetector
+        // Zoom-enabled → give event to ScaleGestureDetector
         // ---------------------------------------------------------
         if (isZoomEnabled) {
             scaleDetector.onTouchEvent(ev)
         }
 
         // ---------------------------------------------------------
-        // 4) Default behavior (this is crucial for bouncing!)
+        // Always let RecyclerView process the event
+        // This is crucial for BouncyEdgeEffectFactory overscroll to work!
         // ---------------------------------------------------------
-        return super.dispatchTouchEvent(ev)
+        try {
+            return super.dispatchTouchEvent(ev)
+        } catch (ignored: Exception) {
+            return false
+        }
     }
 
     fun setupDragListener(dragListener: MyDragListener?) {
