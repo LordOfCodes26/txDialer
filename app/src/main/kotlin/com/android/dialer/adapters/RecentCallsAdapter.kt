@@ -14,6 +14,8 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.behaviorule.arturdumchev.library.pixels
 import com.bumptech.glide.Glide
 import com.goodwy.commons.adapters.MyRecyclerViewListAdapter
@@ -72,6 +74,14 @@ class RecentCallsAdapter(
 
     private val voiceMail = activity.getString(R.string.voicemail)
     private val colorCache = mutableMapOf<String, Int>()
+    
+    // Cache frequently accessed config values to avoid repeated lookups
+    private var cachedFormatPhoneNumbers = activity.config.formatPhoneNumbers
+    private var cachedUseDividers = activity.config.useDividers
+    private var cachedUseRelativeDate = activity.config.useRelativeDate
+    private var cachedShowContactThumbnails = activity.config.showContactThumbnails
+    private var cachedColorSimIcons = activity.config.colorSimIcons
+    private var lastItemCache: CallLogItem? = null
 
     companion object {
         private const val VIEW_TYPE_DATE = 0
@@ -417,20 +427,55 @@ class RecentCallsAdapter(
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateItems(newItems: List<CallLogItem>, highlightText: String = "") {
-        if (textToHighlight != highlightText) {
+        val highlightChanged = textToHighlight != highlightText
+        val itemsChanged = currentList.size != newItems.size || 
+                          currentList.zip(newItems).any { (old, new) -> old != new }
+        
+        if (highlightChanged) {
             textToHighlight = highlightText
+        }
+        
+        // Update cached config values
+        cachedFormatPhoneNumbers = activity.config.formatPhoneNumbers
+        cachedUseDividers = activity.config.useDividers
+        cachedUseRelativeDate = activity.config.useRelativeDate
+        cachedShowContactThumbnails = activity.config.showContactThumbnails
+        cachedColorSimIcons = activity.config.colorSimIcons
+        
+        // Update last item cache
+        lastItemCache = newItems.lastOrNull()
+        
+        if (itemsChanged) {
             submitList(newItems)
-            notifyDataSetChanged()
+            if (highlightChanged) {
+                // Highlight changed along with items - DiffUtil will handle item updates
+                finishActMode()
+            }
+        } else if (highlightChanged) {
+            // Items didn't change, only highlight - update visible items only
+            val layoutManager = recyclerView.layoutManager
+            if (layoutManager is LinearLayoutManager) {
+                val firstVisible = layoutManager.findFirstVisibleItemPosition()
+                val lastVisible = layoutManager.findLastVisibleItemPosition()
+                if (firstVisible != RecyclerView.NO_POSITION && lastVisible != RecyclerView.NO_POSITION) {
+                    for (i in firstVisible..lastVisible) {
+                        notifyItemChanged(i)
+                    }
+                }
+            } else {
+                notifyDataSetChanged()
+            }
             finishActMode()
-        } else {
-            submitList(newItems)
         }
     }
 
     private fun getSelectedItems() = currentList.filterIsInstance<RecentCall>()
         .filter { selectedKeys.contains(it.getItemId()) }
 
-    private fun getLastItem() = currentList.last()
+    private fun getLastItem(): CallLogItem? {
+        // Use cached value if available, otherwise compute
+        return lastItemCache ?: currentList.lastOrNull().also { lastItemCache = it }
+    }
 
     private fun getSelectedPhoneNumber() = getSelectedItems().firstOrNull()?.phoneNumber
 
@@ -643,7 +688,7 @@ class RecentCallsAdapter(
                 }
 
                 itemRecentsDateTime.apply {
-                    text = if (activity.config.useRelativeDate) {
+                    text = if (cachedUseRelativeDate) {
                         DateUtils.getRelativeDateTimeString(
                             context,
                             call.startTS,
@@ -668,7 +713,7 @@ class RecentCallsAdapter(
                 itemRecentsSimImage.beVisibleIf(areMultipleSIMsAvailable)
                 itemRecentsSimId.beVisibleIf(areMultipleSIMsAvailable)
                 if (areMultipleSIMsAvailable) {
-                    val colorSimIcons = activity.config.colorSimIcons
+                    val colorSimIcons = cachedColorSimIcons
                     val simColor = if (!colorSimIcons) textColor
                                 else getAdjustedSimColor(call.simColor)
                     itemRecentsSimImage.applyColorFilter(simColor)
@@ -677,7 +722,7 @@ class RecentCallsAdapter(
                     itemRecentsSimId.text = if (call.simID == -1) "?" else call.simID.toString()
                 }
 
-                val showContactThumbnails = activity.config.showContactThumbnails
+                val showContactThumbnails = cachedShowContactThumbnails
                 itemRecentsImage.beVisibleIf(showContactThumbnails)
                 if (showContactThumbnails) {
                     val size = (root.context.pixels(R.dimen.normal_icon_size) * contactThumbnailsSize).toInt()
@@ -787,11 +832,11 @@ class RecentCallsAdapter(
                 itemRecentsHolder.isSelected = selectedKeys.contains(call.id)
 
                 divider.setBackgroundColor(textColor)
-                if (getLastItem() == call || !activity.config.useDividers) divider.visibility = View.INVISIBLE else divider.visibility = View.VISIBLE
+                if (getLastItem() == call || !cachedUseDividers) divider.visibility = View.INVISIBLE else divider.visibility = View.VISIBLE
 
 //                val matchingContact = findContactByCall(call)
                 val name = call.name //matchingContact?.getNameToDisplay() ?: call.name
-                val formatPhoneNumbers = activity.config.formatPhoneNumbers
+                val formatPhoneNumbers = cachedFormatPhoneNumbers
                 var nameToShow = if (name == call.phoneNumber && formatPhoneNumbers) {
                     SpannableString(name.formatPhoneNumber())
                 } else {
@@ -833,7 +878,7 @@ class RecentCallsAdapter(
                 }
 
                 itemRecentsDateTime.apply {
-                    text = if (activity.config.useRelativeDate) {
+                    text = if (cachedUseRelativeDate) {
                         DateUtils.getRelativeDateTimeString(
                             context,
                             call.startTS,
@@ -858,7 +903,7 @@ class RecentCallsAdapter(
                 itemRecentsSimImage.beVisibleIf(areMultipleSIMsAvailable)
                 itemRecentsSimId.beVisibleIf(areMultipleSIMsAvailable)
                 if (areMultipleSIMsAvailable) {
-                    val colorSimIcons = activity.config.colorSimIcons
+                    val colorSimIcons = cachedColorSimIcons
                     val simColor = if (!colorSimIcons) textColor
                                 else getAdjustedSimColor(call.simColor)
                     itemRecentsSimImage.applyColorFilter(simColor)
@@ -867,7 +912,7 @@ class RecentCallsAdapter(
                     itemRecentsSimId.text = if (call.simID == -1) "?" else call.simID.toString()
                 }
 
-                val showContactThumbnails = activity.config.showContactThumbnails
+                val showContactThumbnails = cachedShowContactThumbnails
                 itemRecentsImage.beVisibleIf(showContactThumbnails)
                 if (showContactThumbnails) {
                     val size = (root.context.pixels(R.dimen.normal_icon_size) * contactThumbnailsSize).toInt()

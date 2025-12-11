@@ -2,6 +2,8 @@ package com.android.dialer.fragments
 
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.provider.CallLog.Calls
 import android.util.AttributeSet
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +29,7 @@ import com.android.dialer.interfaces.RefreshItemsListener
 import com.android.dialer.models.CallLogItem
 import com.android.dialer.models.RecentCall
 import com.google.gson.Gson
+import java.util.concurrent.Executors
 
 class RecentsFragment(
     context: Context, attributeSet: AttributeSet,
@@ -38,6 +41,9 @@ class RecentsFragment(
 
     private var searchQuery: String? = null
     private var recentsHelper = RecentsHelper(context)
+    private val handler = Handler(Looper.getMainLooper())
+    private val backgroundExecutor = Executors.newSingleThreadExecutor()
+    private var searchDebounceRunnable: Runnable? = null
 
     override fun onFinishInflate() {
         super.onFinishInflate()
@@ -116,33 +122,73 @@ class RecentsFragment(
     }
 
     override fun onSearchQueryChanged(text: String) {
+        // Cancel previous debounce
+        searchDebounceRunnable?.let { handler.removeCallbacks(it) }
+        
         searchQuery = text
-        updateSearchResult()
+        
+        // Debounce search for better performance with large lists
+        searchDebounceRunnable = Runnable {
+            updateSearchResult()
+        }
+        
+        // Debounce delay: 150ms for small lists, 300ms for large lists
+        val delay = if (allRecentCalls.size > 500) 300L else 150L
+        searchDebounceRunnable?.let { handler.postDelayed(it, delay) }
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun updateSearchResult() {
-        ensureBackgroundThread {
-            val fixedText = searchQuery!!.trim().replace("\\s+".toRegex(), " ")
-            val recentCalls = allRecentCalls
-                .filterIsInstance<RecentCall>()
-                .filter {
-                    it.name.contains(fixedText, true) ||
-                        it.doesContainPhoneNumber(fixedText) ||
-                        it.nickname.contains(fixedText, true) ||
-                        it.company.contains(fixedText, true) ||
-                        it.jobPosition.contains(fixedText, true)
-                }
-                .sortedWith(
-                    compareByDescending<RecentCall> { it.dayCode }
-                        .thenByDescending { it.name.startsWith(fixedText, true) }
-                        .thenByDescending { it.startTS }
-                )
+        val fixedText = searchQuery?.trim()?.replace("\\s+".toRegex(), " ") ?: return
+        
+        // Move filtering to background thread for large lists
+        if (allRecentCalls.size > 500) {
+            backgroundExecutor.execute {
+                val recentCalls = allRecentCalls
+                    .filterIsInstance<RecentCall>()
+                    .filter {
+                        it.name.contains(fixedText, true) ||
+                            it.doesContainPhoneNumber(fixedText) ||
+                            it.nickname.contains(fixedText, true) ||
+                            it.company.contains(fixedText, true) ||
+                            it.jobPosition.contains(fixedText, true)
+                    }
+                    .sortedWith(
+                        compareByDescending<RecentCall> { it.dayCode }
+                            .thenByDescending { it.name.startsWith(fixedText, true) }
+                            .thenByDescending { it.startTS }
+                    )
 
-            prepareCallLog(recentCalls) {
-                activity?.runOnUiThread {
-                    showOrHidePlaceholder(recentCalls.isEmpty())
-                    recentsAdapter?.updateItems(it, fixedText)
+                prepareCallLog(recentCalls) {
+                    handler.post {
+                        showOrHidePlaceholder(recentCalls.isEmpty())
+                        recentsAdapter?.updateItems(it, fixedText)
+                    }
+                }
+            }
+        } else {
+            // For smaller lists, filter on background thread but use ensureBackgroundThread
+            ensureBackgroundThread {
+                val recentCalls = allRecentCalls
+                    .filterIsInstance<RecentCall>()
+                    .filter {
+                        it.name.contains(fixedText, true) ||
+                            it.doesContainPhoneNumber(fixedText) ||
+                            it.nickname.contains(fixedText, true) ||
+                            it.company.contains(fixedText, true) ||
+                            it.jobPosition.contains(fixedText, true)
+                    }
+                    .sortedWith(
+                        compareByDescending<RecentCall> { it.dayCode }
+                            .thenByDescending { it.name.startsWith(fixedText, true) }
+                            .thenByDescending { it.startTS }
+                    )
+
+                prepareCallLog(recentCalls) {
+                    activity?.runOnUiThread {
+                        showOrHidePlaceholder(recentCalls.isEmpty())
+                        recentsAdapter?.updateItems(it, fixedText)
+                    }
                 }
             }
         }
@@ -193,6 +239,16 @@ class RecentsFragment(
             }
 
             if (binding.recentsList.adapter == null) {
+                // Optimize RecyclerView for large lists
+                binding.recentsList.apply {
+                    setHasFixedSize(true)
+                    setItemViewCacheSize(20) // Increase cache size for smoother scrolling
+                    // Disable animations for large lists to improve performance
+                    if (recents.size > 500) {
+                        itemAnimator = null
+                    }
+                }
+                
                 recentsAdapter = RecentCallsAdapter(
                     activity = activity as SimpleActivity,
                     recyclerView = binding.recentsList,
@@ -238,7 +294,7 @@ class RecentsFragment(
                 binding.recentsList.adapter = recentsAdapter
                 recentsAdapter?.updateItems(recents)
 
-                if (context.areSystemAnimationsEnabled) {
+                if (context.areSystemAnimationsEnabled && recents.size <= 500) {
                     binding.recentsList.scheduleLayoutAnimation()
                 }
 
@@ -361,10 +417,17 @@ class RecentsFragment(
         if (calls.isEmpty()) return mutableListOf()
 
         val contactsWithNumbers = contacts.filter { it.phoneNumbers.isNotEmpty() }
+        
+        // For large lists, create lookup maps for better performance
+        // Note: Since contacts can have multiple phone numbers, we still need to check all numbers
+        // but we can optimize by pre-filtering contacts with numbers
+        
         return calls.map { call ->
             if (call.phoneNumber == call.name) {
                 val privateContact = privateContacts.firstOrNull { it.doesContainPhoneNumber(call.phoneNumber) }
-                val contact = contactsWithNumbers.firstOrNull { it.phoneNumbers.first().normalizedNumber == call.phoneNumber }
+                val contact = contactsWithNumbers.firstOrNull { 
+                    it.phoneNumbers.any { phone -> phone.normalizedNumber == call.phoneNumber }
+                }
 
                 when {
                     privateContact != null -> withUpdatedName(call = call, name = privateContact.getNameToDisplay())
