@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.widget.EdgeEffect
+import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -15,11 +16,13 @@ import com.goodwy.commons.views.bouncy.util.*
 import com.goodwy.commons.R
 
 
-class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(context, attrs)
+open class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(context, attrs)
 {
     private lateinit var callBack: DragDropCallBack
 
     var onOverPullListener: OnOverPullListener? = null
+
+    var onBounceStateListener: OnBounceStateListener? = null
 
     var overscrollAnimationSize = 0.5f
 
@@ -79,6 +82,13 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
                 .setStiffness(stiffness)
         )
 
+    private var isBouncing = false
+        set(value) {
+            if (field != value) {
+                field = value
+                onBounceStateListener?.onBounceStateChanged(value)
+            }
+        }
 
     var touched: Boolean = false
 
@@ -131,20 +141,34 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
         {
             when (orientation)
             {
-                HORIZONTAL -> spring = SpringAnimation(this, SpringAnimation.TRANSLATION_X)
-                    .setSpring(SpringForce()
-                        .setFinalPosition(0f)
-                        .setDampingRatio(dampingRatio)
-                        .setStiffness(stiffness))
+                HORIZONTAL -> {
+                    spring = SpringAnimation(this, SpringAnimation.TRANSLATION_X)
+                        .setSpring(SpringForce()
+                            .setFinalPosition(0f)
+                            .setDampingRatio(dampingRatio)
+                            .setStiffness(stiffness))
+                    setupSpringListeners()
+                }
 
-                VERTICAL -> spring = SpringAnimation(this, SpringAnimation.TRANSLATION_Y)
-                    .setSpring(SpringForce()
-                        .setFinalPosition(0f)
-                        .setDampingRatio(dampingRatio)
-                        .setStiffness(stiffness))
+                VERTICAL -> {
+                    spring = SpringAnimation(this, SpringAnimation.TRANSLATION_Y)
+                        .setSpring(SpringForce()
+                            .setFinalPosition(0f)
+                            .setDampingRatio(dampingRatio)
+                            .setStiffness(stiffness))
+                    setupSpringListeners()
+                }
 
             }
         }
+    }
+
+    private fun setupSpringListeners() {
+        spring.addEndListener(object : DynamicAnimation.OnAnimationEndListener {
+            override fun onAnimationEnd(animation: DynamicAnimation<*>?, canceled: Boolean, value: Float, velocity: Float) {
+                isBouncing = false
+            }
+        })
     }
 
     init {
@@ -215,6 +239,7 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
 
                             rc.translationY += delta
                             spring.cancel()
+                            rc.isBouncing = rc.translationY != 0f
                         }
                         else
                         {
@@ -226,6 +251,7 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
 
                             rc.translationX += delta
                             spring.cancel()
+                            rc.isBouncing = rc.translationX != 0f
                         }
 
                         forEachVisibleHolder{holder: ViewHolder? -> if (holder is BouncyViewHolder)holder.onPulled(deltaDistance)}
@@ -240,6 +266,7 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
 
 
                         onOverPullListener?.onRelease()
+                        isBouncing = true
                         spring.start()
 
                         forEachVisibleHolder{holder: ViewHolder? -> if (holder is BouncyViewHolder)holder.onRelease()}
@@ -256,7 +283,7 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
                             else
                                 1 * velocity * flingAnimationSize
 
-
+                            isBouncing = true
                             spring.setStartVelocity(v).start()
                         }
                         else
@@ -266,7 +293,7 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
                             else
                                 1 * velocity * flingAnimationSize
 
-
+                            isBouncing = true
                             spring.setStartVelocity(v).start()
                         }
 
@@ -283,7 +310,13 @@ class BouncyRecyclerView(context: Context, attrs: AttributeSet?) : RecyclerView(
                 }
             }
         }
+
+        setupSpringListeners()
     }
 
     abstract class Adapter<T:ViewHolder>: RecyclerView.Adapter<T>(), DragDropAdapter<T>
+
+    interface OnBounceStateListener {
+        fun onBounceStateChanged(isBouncing: Boolean)
+    }
 }

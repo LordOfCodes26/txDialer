@@ -41,6 +41,7 @@ import com.goodwy.commons.interfaces.ItemTouchHelperContract
 import com.goodwy.commons.interfaces.StartReorderDragListener
 import com.goodwy.commons.models.contacts.Contact
 import com.goodwy.commons.views.MyRecyclerView
+import com.goodwy.commons.views.bouncy.BouncyRecyclerView
 import com.android.dialer.BuildConfig
 import com.android.dialer.R
 import com.android.dialer.activities.SimpleActivity
@@ -79,6 +80,7 @@ class ContactsAdapter(
     private var startReorderDragListener: StartReorderDragListener? = null
     var onDragEndListener: (() -> Unit)? = null
     var onSpanCountListener: (Int) -> Unit = {}
+    private var isBouncing = false
 
     init {
         setupDragListener(true)
@@ -95,6 +97,14 @@ class ContactsAdapter(
                 override fun requestDrag(viewHolder: RecyclerView.ViewHolder) {
                     touchHelper?.startDrag(viewHolder)
                 }
+            }
+        }
+
+        // Set up bounce state listener
+        recyclerView.onBounceStateListener = object : BouncyRecyclerView.OnBounceStateListener {
+            override fun onBounceStateChanged(isBouncing: Boolean) {
+                this@ContactsAdapter.isBouncing = isBouncing
+                updateSwipeIconHoldersVisibility()
             }
         }
     }
@@ -613,6 +623,9 @@ class ContactsAdapter(
                 swipeRightIcon!!.setColorFilter(properPrimaryColor.getContrastColor())
                 swipeRightIconHolder!!.setBackgroundColor(swipeActionColor(swipeRightAction))
 
+                // Hide swipe icon holders when bouncing
+                updateSwipeIconHolderVisibility(swipeLeftIconHolder, swipeRightIconHolder)
+
                 itemContactSwipe!!.setDirectionEnabled(SwipeDirection.Left, swipeLeftAction != SWIPE_ACTION_NONE)
                 itemContactSwipe!!.setDirectionEnabled(SwipeDirection.Right, swipeRightAction != SWIPE_ACTION_NONE)
 
@@ -1032,6 +1045,28 @@ class ContactsAdapter(
 
     private fun getContactPhoneNumber(contact: Contact): String? {
         return contact.getPrimaryNumber()
+    }
+
+    private fun updateSwipeIconHoldersVisibility() {
+        // Update all visible holders
+        for (i in 0 until recyclerView.childCount) {
+            val child = recyclerView.getChildAt(i)
+            val holder = recyclerView.getChildViewHolder(child)
+            if (holder != null) {
+                val binding = Binding.getByItemViewType(holder.itemViewType, activity.config.useSwipeToAction).bind(holder.itemView)
+                updateSwipeIconHolderVisibility(binding.swipeLeftIconHolder, binding.swipeRightIconHolder)
+            }
+        }
+    }
+
+    private fun updateSwipeIconHolderVisibility(swipeLeftIconHolder: RelativeLayout?, swipeRightIconHolder: RelativeLayout?) {
+        if (isBouncing) {
+            swipeLeftIconHolder?.beGone()
+            swipeRightIconHolder?.beGone()
+        } else {
+            swipeLeftIconHolder?.beVisible()
+            swipeRightIconHolder?.beVisible()
+        }
     }
 
     private fun swipeActionImageResource(swipeAction: Int): Int {

@@ -1079,6 +1079,7 @@ class BouncyNestedScrollView @JvmOverloads constructor(context: Context, attrs: 
      * @param bottom    the bottom offset of the new area to be made visible
      * @return true if the key event is consumed by this method, false otherwise
      */
+    @SuppressLint("SuspiciousIndentation")
     private fun scrollAndFocus(direction: Int, top: Int, bottom: Int): Boolean
     {
         var handled = true
