@@ -2,6 +2,7 @@ package com.android.dialer.helpers
 
 import com.goodwy.commons.helpers.TAB_CALL_HISTORY
 import com.goodwy.commons.helpers.TAB_CONTACTS
+import com.goodwy.commons.helpers.TAB_DIALPAD
 import com.goodwy.commons.helpers.TAB_FAVORITES
 
 // shared prefs
@@ -62,9 +63,9 @@ const val KEEP_CALLS_IN_POPUP = "keep_calls_in_popup"
 const val INIT_CALL_BLOCKING_SETUP = "init_call_blocking_setup"
 const val RECENT_OUTGOING_NUMBERS = "recent_outgoing_numbers"
 
-const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY
+const val ALL_TABS_MASK = TAB_CONTACTS or TAB_FAVORITES or TAB_CALL_HISTORY or TAB_DIALPAD
 
-val tabsList = arrayListOf(TAB_FAVORITES, TAB_CALL_HISTORY, TAB_CONTACTS)
+val tabsList = arrayListOf(TAB_FAVORITES, TAB_CALL_HISTORY, TAB_CONTACTS, TAB_DIALPAD)
 
 private const val PATH = "com.android.dialer.action."
 const val ACCEPT_CALL = PATH + "accept_call"

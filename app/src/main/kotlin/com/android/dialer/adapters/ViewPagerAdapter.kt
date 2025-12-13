@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.viewpager.widget.PagerAdapter
 import com.goodwy.commons.helpers.TAB_CALL_HISTORY
 import com.goodwy.commons.helpers.TAB_CONTACTS
+import com.goodwy.commons.helpers.TAB_DIALPAD
 import com.goodwy.commons.helpers.TAB_FAVORITES
 import com.android.dialer.R
 import com.android.dialer.activities.SimpleActivity
@@ -47,6 +48,10 @@ class ViewPagerAdapter(val activity: SimpleActivity) : PagerAdapter() {
 
         if (showTabs and TAB_CONTACTS > 0) {
             fragments.add(R.layout.fragment_contacts)
+        }
+
+        if (showTabs and TAB_DIALPAD > 0) {
+            fragments.add(R.layout.fragment_dialpad)
         }
 
         return if (position < fragments.size) fragments[position] else fragments.last()

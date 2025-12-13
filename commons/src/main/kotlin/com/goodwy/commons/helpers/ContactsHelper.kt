@@ -55,12 +55,6 @@ class ContactsHelper(val context: Context) {
 
             getDeviceContacts(contacts, ignoredContactSources, gettingDuplicates)
 
-            if (displayContactSources.contains(SMT_PRIVATE)) {
-                LocalContactsHelper(context).getAllContacts().forEach {
-                    contacts.put(it.id, it)
-                }
-            }
-
             val contactsSize = contacts.size
             val tempContacts = ArrayList<Contact>(contactsSize)
             val resultContacts = ArrayList<Contact>(contactsSize)
@@ -834,13 +828,6 @@ class ContactsHelper(val context: Context) {
     }
 
     fun createNewGroup(title: String, accountName: String, accountType: String): Group? {
-        if (accountType == SMT_PRIVATE) {
-            val newGroup = Group(null, title)
-            val id = context.groupsDB.insertOrUpdate(newGroup)
-            newGroup.id = id
-            return newGroup
-        }
-
         val operations = ArrayList<ContentProviderOperation>()
         ContentProviderOperation.newInsert(Groups.CONTENT_URI).apply {
             withValue(Groups.TITLE, title)
@@ -895,8 +882,6 @@ class ContactsHelper(val context: Context) {
     fun getContactWithId(id: Int, isLocalPrivate: Boolean): Contact? {
         if (id == 0) {
             return null
-        } else if (isLocalPrivate) {
-            return LocalContactsHelper(context).getContactWithId(id)
         }
 
         val selection = "(${Data.MIMETYPE} = ? OR ${Data.MIMETYPE} = ?) AND ${Data.RAW_CONTACT_ID} = ?"
@@ -1005,7 +990,6 @@ class ContactsHelper(val context: Context) {
 
     private fun getContactSourcesSync(): ArrayList<ContactSource> {
         val sources = getDeviceContactSources()
-        sources.add(context.getPrivateContactSource())
         return ArrayList(sources)
     }
 
@@ -1166,9 +1150,6 @@ class ContactsHelper(val context: Context) {
 
     fun updateContact(contact: Contact, photoUpdateStatus: Int): Boolean {
         context.toast(R.string.updating)
-        if (contact.isPrivate()) {
-            return LocalContactsHelper(context).insertOrUpdateContact(contact)
-        }
 
         try {
             val operations = ArrayList<ContentProviderOperation>()
@@ -1515,10 +1496,6 @@ class ContactsHelper(val context: Context) {
     }
 
     fun insertContact(contact: Contact): Boolean {
-        if (contact.isPrivate()) {
-            return LocalContactsHelper(context).insertOrUpdateContact(contact)
-        }
-
         try {
             val operations = ArrayList<ContentProviderOperation>()
             ContentProviderOperation.newInsert(RawContacts.CONTENT_URI).apply {
@@ -1742,7 +1719,6 @@ class ContactsHelper(val context: Context) {
 
     fun addFavorites(contacts: ArrayList<Contact>) {
         ensureBackgroundThread {
-            toggleLocalFavorites(contacts, true)
             if (context.hasContactPermissions()) {
                 toggleFavorites(contacts, true)
             }
@@ -1751,7 +1727,6 @@ class ContactsHelper(val context: Context) {
 
     fun removeFavorites(contacts: ArrayList<Contact>) {
         ensureBackgroundThread {
-            toggleLocalFavorites(contacts, false)
             if (context.hasContactPermissions()) {
                 toggleFavorites(contacts, false)
             }
@@ -1761,7 +1736,7 @@ class ContactsHelper(val context: Context) {
     private fun toggleFavorites(contacts: ArrayList<Contact>, addToFavorites: Boolean) {
         try {
             val operations = ArrayList<ContentProviderOperation>()
-            contacts.filter { !it.isPrivate() }.map { it.contactId.toString() }.forEach {
+            contacts.map { it.contactId.toString() }.forEach {
                 val uri = Uri.withAppendedPath(Contacts.CONTENT_URI, it)
                 ContentProviderOperation.newUpdate(uri).apply {
                     withValue(Contacts.STARRED, if (addToFavorites) 1 else 0)
@@ -1777,11 +1752,6 @@ class ContactsHelper(val context: Context) {
         } catch (e: Exception) {
             context.showErrorToast(e)
         }
-    }
-
-    private fun toggleLocalFavorites(contacts: ArrayList<Contact>, addToFavorites: Boolean) {
-        val localContacts = contacts.filter { it.isPrivate() }.map { it.id }.toTypedArray()
-        LocalContactsHelper(context).toggleFavorites(localContacts, addToFavorites)
     }
 
     fun updateRingtone(contactId: String, newUri: String) {
@@ -1818,13 +1788,10 @@ class ContactsHelper(val context: Context) {
     }
 
     fun deleteContacts(contacts: ArrayList<Contact>): Boolean {
-        val localContacts = contacts.filter { it.isPrivate() }.map { it.id.toLong() }.toMutableList()
-        LocalContactsHelper(context).deleteContactIds(localContacts)
-
         return try {
             val operations = ArrayList<ContentProviderOperation>()
             val selection = "${RawContacts._ID} = ?"
-            contacts.filter { !it.isPrivate() }.forEach {
+            contacts.forEach {
                 ContentProviderOperation.newDelete(RawContacts.CONTENT_URI).apply {
                     val selectionArgs = arrayOf(it.id.toString())
                     withSelection(selection, selectionArgs)
@@ -1887,12 +1854,6 @@ class ContactsHelper(val context: Context) {
             displayContactSources = context.getVisibleContactSources()
 
             getDeviceContactsForRecents(contacts)
-
-            if (displayContactSources.contains(SMT_PRIVATE)) {
-                LocalContactsHelper(context).getAllContacts().forEach {
-                    contacts.put(it.id, it)
-                }
-            }
 
             val contactsSize = contacts.size
             val tempContacts = ArrayList<Contact>(contactsSize)

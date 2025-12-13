@@ -36,6 +36,7 @@
             android:elevation="@dimen/medium_margin"
             android:padding="@dimen/activity_margin"
             android:src="@drawable/ic_dialpad_vector"
+            android:visibility="gone"
             app:backgroundTint="@color/color_primary"
             app:layout_constraintBottom_toTopOf="@+id/mainTabsHolder"
             app:layout_constraintEnd_toEndOf="parent"

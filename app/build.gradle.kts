@@ -163,6 +163,7 @@ dependencies {
     //Goodwy
     implementation("com.squareup:seismic:1.0.2")
     implementation("com.github.douglasspgyn:CircularCountdown:0.3.0")
+    implementation("com.github.Dimezis:BlurView:version-3.2.0")
     implementation(libs.shortcut.badger)
     implementation(libs.behavio.rule)
     implementation(libs.rx.animation)

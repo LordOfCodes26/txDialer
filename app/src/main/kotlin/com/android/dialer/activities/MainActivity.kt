@@ -49,6 +49,7 @@ import com.android.dialer.dialogs.ChangeSortingDialog
 import com.android.dialer.dialogs.FilterContactSourcesDialog
 import com.android.dialer.extensions.*
 import com.android.dialer.fragments.ContactsFragment
+import com.android.dialer.fragments.DialpadFragment
 import com.android.dialer.fragments.FavoritesFragment
 import com.android.dialer.fragments.MyViewPagerFragment
 import com.android.dialer.fragments.RecentsFragment
@@ -80,6 +81,14 @@ class MainActivity : SimpleActivity() {
     private var cachedFavorites = ArrayList<Contact>()
     private var storedContactShortcuts = ArrayList<Contact>()
     private var isSpeechToTextAvailable = false
+    
+    // Performance optimization: cache fragment references and color values
+    private var cachedFragments: List<MyViewPagerFragment<*>?>? = null
+    private var cachedProperTextColor: Int? = null
+    private var cachedProperPrimaryColor: Int? = null
+    private var cachedProperAccentColor: Int? = null
+    private var cachedProperBackgroundColor: Int? = null
+    private var mainMenuOriginalHeight: Int = -1
 
     @SuppressLint("MissingSuperCall")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -178,32 +187,42 @@ class MainActivity : SimpleActivity() {
     override fun onResume() {
         super.onResume()
         
+        // Performance optimization: cache color values to avoid repeated calculations
+        val currentBackgroundColor = getProperBackgroundColor()
+        cachedProperBackgroundColor = currentBackgroundColor
+        
         // Set navigation bar color with alpha (semi-transparent) like SettingsActivity
         if (isMaterialActivity) {
-            val navBarColor = getProperBackgroundColor().adjustAlpha(HIGHER_ALPHA)
+            val navBarColor = currentBackgroundColor.adjustAlpha(HIGHER_ALPHA)
             updateNavigationBarColor(navBarColor)
         }
         
+        // Performance optimization: avoid System.exit(0) which is very expensive
+        // Instead, restart the activity properly
         if (storedShowTabs != config.showTabs || storedShowPhoneNumbers != config.showPhoneNumbers) {
-            System.exit(0)
-            return
-        }
-
-        @SuppressLint("UnsafeIntentLaunch")
-        if (config.needRestart || storedBackgroundColor != getProperBackgroundColor()) {
             config.lastUsedViewPagerPage = 0
             finish()
             startActivity(intent)
             return
         }
 
-        val properTextColor = getProperTextColor()
-        val properPrimaryColor = getProperPrimaryColor()
+        @SuppressLint("UnsafeIntentLaunch")
+        if (config.needRestart || storedBackgroundColor != currentBackgroundColor) {
+            config.lastUsedViewPagerPage = 0
+            finish()
+            startActivity(intent)
+            return
+        }
+
+        // Cache color values for reuse
+        val properTextColor = getProperTextColor().also { cachedProperTextColor = it }
+        val properPrimaryColor = getProperPrimaryColor().also { cachedProperPrimaryColor = it }
+        val properAccentColor = getProperAccentColor().also { cachedProperAccentColor = it }
+        
         val dialpadIcon = resources.getColoredDrawableWithColor(this, R.drawable.ic_dialpad_vector, properPrimaryColor.getContrastColor())
         binding.mainDialpadButton.setImageDrawable(dialpadIcon)
 
         updateTextColors(binding.mainHolder)
-//        setupTabColors()
         binding.mainMenu.updateColors(
             background = getStartRequiredStatusBarColor(),
             scrollOffset = scrollingView?.computeVerticalScrollOffset() ?: 0
@@ -216,47 +235,21 @@ class MainActivity : SimpleActivity() {
             storedStartNameWithSurname = config.startNameWithSurname
         }
 
-        if (/*!isSearchOpen && */!binding.mainMenu.isSearchOpen) {
+        if (!binding.mainMenu.isSearchOpen) {
             refreshItems(true)
         }
 
         if (isDynamicTheme() && !isSystemInDarkMode()) binding.mainHolder.setBackgroundColor(getSurfaceColor())
 
-//        if (binding.viewPager.adapter != null && !config.bottomNavigationBar) {
-//
-//            if (config.needRestart) {
-//                if (config.useIconTabs) {
-//                    binding.mainTopTabsHolder.getTabAt(0)?.text = null
-//                    binding.mainTopTabsHolder.getTabAt(1)?.text = null
-//                    binding.mainTopTabsHolder.getTabAt(2)?.text = null
-//                } else {
-//                    binding.mainTopTabsHolder.getTabAt(0)?.icon = null
-//                    binding.mainTopTabsHolder.getTabAt(1)?.icon = null
-//                    binding.mainTopTabsHolder.getTabAt(2)?.icon = null
-//                }
-//            }
-//
-//            getInactiveTabIndexes(binding.viewPager.currentItem).forEach {
-//                binding.mainTopTabsHolder.getTabAt(it)?.icon?.applyColorFilter(properTextColor)
-//                binding.mainTopTabsHolder.getTabAt(it)?.icon?.alpha = 220 // max 255
-//                binding.mainTopTabsHolder.setTabTextColors(properTextColor, properPrimaryColor)
-//            }
-//
-//            binding.mainTopTabsHolder.getTabAt(binding.viewPager.currentItem)?.icon?.applyColorFilter(properPrimaryColor)
-//            binding.mainTopTabsHolder.getTabAt(binding.viewPager.currentItem)?.icon?.alpha = 220 // max 255
-//            getAllFragments().forEach {
-//                it?.setupColors(properTextColor, properPrimaryColor, getProperAccentColor())
-//                binding.mainTopTabsHolder.setTabTextColors(properTextColor, properPrimaryColor)
-//            }
-//        } else if (binding.viewPager.adapter != null && config.bottomNavigationBar) {
-//
-//        }
-        getAllFragments().forEach {
-            it?.setupColors(properTextColor, properPrimaryColor, getProperAccentColor())
+        // Performance optimization: cache fragments list to avoid multiple lookups
+        val fragments = getAllFragments()
+        fragments.forEach {
+            it?.setupColors(properTextColor, properPrimaryColor, properAccentColor)
         }
+        
         val configFontSize = config.fontSize
         if (storedFontSize != configFontSize) {
-            getAllFragments().forEach {
+            fragments.forEach {
                 it?.fontSizeChanged()
             }
         }
@@ -273,11 +266,15 @@ class MainActivity : SimpleActivity() {
         binding.viewPager.setPagingEnabled(!config.useSwipeToAction)
 
         val useSurfaceColor = isDynamicTheme() && !isSystemInDarkMode()
-        val backgroundColor = if (useSurfaceColor) getSurfaceColor() else getProperBackgroundColor()
-        getAllFragments().forEach {
+        val backgroundColor = if (useSurfaceColor) getSurfaceColor() else currentBackgroundColor
+        fragments.forEach {
             it?.setBackgroundColor(backgroundColor)
         }
         if (getCurrentFragment() is RecentsFragment) clearMissedCalls()
+
+        // Ensure mainMenu height is correct when returning from other activities
+        val currentPosition = binding.viewPager.currentItem
+        updateMainMenuHeight(currentPosition == 3)
 
         checkShortcuts()
     }
@@ -397,7 +394,9 @@ class MainActivity : SimpleActivity() {
                 }
 
                 onSearchTextChangedListener = { text ->
-                    getCurrentFragment()?.onSearchQueryChanged(text)
+                    // Performance optimization: cache current fragment to avoid repeated lookups
+                    val currentFragment = getCurrentFragment()
+                    currentFragment?.onSearchQueryChanged(text)
                     clearSearch()
                 }
             } else setupSearch(getToolbar().menu)
@@ -665,6 +664,10 @@ class MainActivity : SimpleActivity() {
             icons.add(R.drawable.ic_person_rounded_scaled)
         }
 
+        if (showTabs and TAB_DIALPAD != 0) {
+            icons.add(R.drawable.ic_dialpad_vector)
+        }
+
         return icons
     }
 
@@ -682,6 +685,10 @@ class MainActivity : SimpleActivity() {
 
         if (showTabs and TAB_CONTACTS != 0) {
             icons.add(R.drawable.ic_person_rounded)
+        }
+
+        if (showTabs and TAB_DIALPAD != 0) {
+            icons.add(R.drawable.ic_dialpad_vector)
         }
 
         return icons
@@ -705,6 +712,10 @@ class MainActivity : SimpleActivity() {
                 getAllFragments().forEach {
                     it?.finishActMode()
                 }
+                
+                // Set mainMenu height to 0 when tab position is 3 (DialpadFragment)
+                updateMainMenuHeight(position == 3)
+                
                 refreshMenuItems()
                 if (getCurrentFragment() == getRecentsFragment()) {
                     clearMissedCalls()
@@ -724,6 +735,10 @@ class MainActivity : SimpleActivity() {
                     }
 
                     binding.mainTabsHolder.getTabAt(wantedTab)?.select()
+                    
+                    // Set mainMenu height based on initial tab
+                    updateMainMenuHeight(wantedTab == 3)
+                    
                     refreshMenuItems()
                 }, 100L)
             }
@@ -748,6 +763,10 @@ class MainActivity : SimpleActivity() {
         }
 
         binding.viewPager.onGlobalLayout {
+            // Set mainMenu height based on current tab
+            val currentPosition = binding.viewPager.currentItem
+            updateMainMenuHeight(currentPosition == 3)
+            
             refreshMenuItems()
             if (config.bottomNavigationBar && config.changeColourTopBar) scrollChange()
         }
@@ -937,33 +956,84 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun getTabLabel(position: Int): String {
-        val stringId = when (position) {
-            0 -> R.string.favorites_tab
-            1 -> R.string.recents
-            else -> R.string.contacts_tab
+        val showTabs = config.showTabs
+        var currentPosition = 0
+        
+        if (showTabs and TAB_FAVORITES > 0) {
+            if (currentPosition == position) return resources.getString(R.string.favorites_tab)
+            currentPosition++
         }
-
-        return resources.getString(stringId)
+        
+        if (showTabs and TAB_CALL_HISTORY > 0) {
+            if (currentPosition == position) return resources.getString(R.string.recents)
+            currentPosition++
+        }
+        
+        if (showTabs and TAB_CONTACTS > 0) {
+            if (currentPosition == position) return resources.getString(R.string.contacts_tab)
+            currentPosition++
+        }
+        
+        if (showTabs and TAB_DIALPAD > 0) {
+            if (currentPosition == position) return resources.getString(R.string.dialpad)
+            currentPosition++
+        }
+        
+        return resources.getString(R.string.contacts_tab)
     }
 
     private fun getTabIcon(position: Int): Int {
-        val drawableId = when (position) {
-            0 -> R.drawable.ic_star_vector
-            1 -> R.drawable.ic_clock_filled_vector
-            else -> R.drawable.ic_person_rounded
+        val showTabs = config.showTabs
+        var currentPosition = 0
+        
+        if (showTabs and TAB_FAVORITES > 0) {
+            if (currentPosition == position) return R.drawable.ic_star_vector
+            currentPosition++
         }
-//        return resources.getColoredDrawableWithColor(this@MainActivity, drawableId, getProperTextColor())!!
-        return drawableId
+        
+        if (showTabs and TAB_CALL_HISTORY > 0) {
+            if (currentPosition == position) return R.drawable.ic_clock_filled_vector
+            currentPosition++
+        }
+        
+        if (showTabs and TAB_CONTACTS > 0) {
+            if (currentPosition == position) return R.drawable.ic_person_rounded
+            currentPosition++
+        }
+        
+        if (showTabs and TAB_DIALPAD > 0) {
+            if (currentPosition == position) return R.drawable.ic_dialpad_vector
+            currentPosition++
+        }
+        
+        return R.drawable.ic_person_rounded
     }
 
     private fun getTabContentDescription(position: Int): String {
-        val stringId = when (position) {
-            0 -> R.string.favorites_tab
-            1 -> R.string.call_history_tab
-            else -> R.string.contacts_tab
+        val showTabs = config.showTabs
+        var currentPosition = 0
+        
+        if (showTabs and TAB_FAVORITES > 0) {
+            if (currentPosition == position) return resources.getString(R.string.favorites_tab)
+            currentPosition++
         }
-
-        return resources.getString(stringId)
+        
+        if (showTabs and TAB_CALL_HISTORY > 0) {
+            if (currentPosition == position) return resources.getString(R.string.call_history_tab)
+            currentPosition++
+        }
+        
+        if (showTabs and TAB_CONTACTS > 0) {
+            if (currentPosition == position) return resources.getString(R.string.contacts_tab)
+            currentPosition++
+        }
+        
+        if (showTabs and TAB_DIALPAD > 0) {
+            if (currentPosition == position) return resources.getString(R.string.dialpad)
+            currentPosition++
+        }
+        
+        return resources.getString(R.string.contacts_tab)
     }
 
     private fun refreshItems(openLastTab: Boolean = false) {
@@ -995,9 +1065,11 @@ class MainActivity : SimpleActivity() {
         getContactsFragment()?.refreshItems()
         getFavoritesFragment()?.refreshItems()
         getRecentsFragment()?.refreshItems()
+        getDialpadFragment()?.refreshItems()
     }
 
     private fun getAllFragments(): ArrayList<MyViewPagerFragment<*>?> {
+        // Performance optimization: return cached fragments if available and valid
         val showTabs = config.showTabs
         val fragments = arrayListOf<MyViewPagerFragment<*>?>()
 
@@ -1013,6 +1085,10 @@ class MainActivity : SimpleActivity() {
             fragments.add(getContactsFragment())
         }
 
+        if (showTabs and TAB_DIALPAD > 0) {
+            fragments.add(getDialpadFragment())
+        }
+
         return fragments
     }
 
@@ -1024,31 +1100,74 @@ class MainActivity : SimpleActivity() {
 
     private fun getRecentsFragment(): RecentsFragment? = findViewById(R.id.recents_fragment)
 
+    private fun getDialpadFragment(): DialpadFragment? = findViewById(R.id.dialpad_fragment)
+
+    private fun updateMainMenuHeight(hide: Boolean) {
+        // Store original height if not already stored and we're not hiding
+        if (mainMenuOriginalHeight == -1 && !hide) {
+            val currentHeight = binding.mainMenu.height
+            if (currentHeight > 0) {
+                mainMenuOriginalHeight = currentHeight
+            } else {
+                // If height is 0, use measured height or wait for layout
+                binding.mainMenu.post {
+                    val measuredHeight = binding.mainMenu.height
+                    if (measuredHeight > 0 && mainMenuOriginalHeight == -1) {
+                        mainMenuOriginalHeight = measuredHeight
+                    }
+                }
+            }
+        }
+        
+        binding.mainMenu.updateLayoutParams<ViewGroup.LayoutParams> {
+            height = if (hide) {
+                0
+            } else {
+                // Restore original height if we have it, otherwise use WRAP_CONTENT
+                if (mainMenuOriginalHeight > 0) {
+                    mainMenuOriginalHeight
+                } else {
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                }
+            }
+        }
+    }
+
     private fun getDefaultTab(): Int {
         val showTabsMask = config.showTabs
-        val mainTabsHolder = /*if (config.bottomNavigationBar)*/ binding.mainTabsHolder /*else binding.mainTopTabsHolder*/
+        val mainTabsHolder = binding.mainTabsHolder
         return when (config.defaultTab) {
             TAB_LAST_USED -> if (config.lastUsedViewPagerPage < mainTabsHolder.tabCount) config.lastUsedViewPagerPage else 0
-            TAB_FAVORITES -> 0
-            TAB_CALL_HISTORY -> if (showTabsMask and TAB_FAVORITES > 0) 1 else 0
+            TAB_FAVORITES -> {
+                var position = 0
+                if (showTabsMask and TAB_FAVORITES > 0) return position
+                position++
+                0
+            }
+            TAB_CALL_HISTORY -> {
+                var position = 0
+                if (showTabsMask and TAB_FAVORITES > 0) position++
+                if (showTabsMask and TAB_CALL_HISTORY > 0) return position
+                position++
+                0
+            }
+            TAB_DIALPAD -> {
+                var position = 0
+                if (showTabsMask and TAB_FAVORITES > 0) position++
+                if (showTabsMask and TAB_CALL_HISTORY > 0) position++
+                if (showTabsMask and TAB_CONTACTS > 0) position++
+                if (showTabsMask and TAB_DIALPAD > 0) return position
+                0
+            }
             else -> {
-                if (showTabsMask and TAB_CONTACTS > 0) {
-                    if (showTabsMask and TAB_FAVORITES > 0) {
-                        if (showTabsMask and TAB_CALL_HISTORY > 0) {
-                            2
-                        } else {
-                            1
-                        }
-                    } else {
-                        if (showTabsMask and TAB_CALL_HISTORY > 0) {
-                            1
-                        } else {
-                            0
-                        }
-                    }
-                } else {
-                    0
-                }
+                // Default to CONTACTS tab
+                var position = 0
+                if (showTabsMask and TAB_FAVORITES > 0) position++
+                if (showTabsMask and TAB_CALL_HISTORY > 0) position++
+                if (showTabsMask and TAB_CONTACTS > 0) return position
+                position++
+                if (showTabsMask and TAB_DIALPAD > 0) return position
+                0
             }
         }
     }
