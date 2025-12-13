@@ -140,7 +140,7 @@
                 android:background="@drawable/circle_background_accent"
                 android:foreground="@drawable/button_round_pressed"
                 android:padding="@dimen/larger_margin"
-                android:layout_marginBottom="@dimen/about_margin"
+                android:layout_marginBottom="80dp"
                 android:src="@drawable/ic_dialpad_vector"
                 android:contentDescription="@string/show_dialpad"
                 android:visibility="gone"
