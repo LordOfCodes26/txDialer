@@ -320,7 +320,6 @@ class DialpadFragment(
             DIALPAD_IOS -> {
                 val properBackgroundColor =
                     if (context.isDynamicTheme() && !context.isSystemInDarkMode()) context.getSurfaceColor() else context.getProperBackgroundColor()
-                (activity as? SimpleActivity)?.updateNavigationBarColor(properBackgroundColor)
 
                 binding.dialpadClearWrapper.root.beGone()
                 binding.dialpadRectWrapper.root.beGone()
@@ -356,7 +355,6 @@ class DialpadFragment(
             DIALPAD_CONCEPT -> {
                 val properBackgroundColor =
                     if (context.isDynamicTheme() && !context.isSystemInDarkMode()) context.getSurfaceColor() else context.getProperBackgroundColor()
-                (activity as? SimpleActivity)?.updateNavigationBarColor(properBackgroundColor)
 
                 binding.dialpadRectWrapper.apply {
                     dialpadVoicemail.beVisibleIf(context.config.showVoicemailIcon)
@@ -389,7 +387,6 @@ class DialpadFragment(
             DIALPAD_GRID -> {
                 val surfaceColor =
                     if (context.isDynamicTheme() && !context.isSystemInDarkMode()) context.getProperBackgroundColor() else context.getSurfaceColor()
-                (activity as? SimpleActivity)?.updateNavigationBarColor(surfaceColor)
 
                 binding.dialpadRoundWrapper.root.beGone()
                 binding.dialpadRectWrapper.root.beGone()
@@ -428,7 +425,6 @@ class DialpadFragment(
             else -> {
                 val surfaceColor =
                     if (context.isDynamicTheme() && !context.isSystemInDarkMode()) context.getProperBackgroundColor() else context.getSurfaceColor()
-                (activity as? SimpleActivity)?.updateNavigationBarColor(surfaceColor)
 
                 binding.dialpadRoundWrapper.root.beGone()
                 binding.dialpadRectWrapper.root.beGone()

@@ -93,7 +93,6 @@ class MainActivity : SimpleActivity() {
     @SuppressLint("MissingSuperCall")
     override fun onCreate(savedInstanceState: Bundle?) {
         isMaterialActivity = true
-        updateNavigationBarColor = false // We'll set it manually with alpha in onResume
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         appLaunched(BuildConfig.APPLICATION_ID)
@@ -190,12 +189,6 @@ class MainActivity : SimpleActivity() {
         // Performance optimization: cache color values to avoid repeated calculations
         val currentBackgroundColor = getProperBackgroundColor()
         cachedProperBackgroundColor = currentBackgroundColor
-        
-        // Set navigation bar color with alpha (semi-transparent) like SettingsActivity
-        if (isMaterialActivity) {
-            val navBarColor = currentBackgroundColor.adjustAlpha(HIGHER_ALPHA)
-            updateNavigationBarColor(navBarColor)
-        }
         
         // Performance optimization: avoid System.exit(0) which is very expensive
         // Instead, restart the activity properly

@@ -103,7 +103,7 @@ class SettingsActivity : SimpleActivity() {
 
         binding.apply {
             updateMaterialActivityViews(settingsCoordinator, settingsHolder, useTransparentNavigation = true, useTopSearchMenu = false)
-            setupMaterialScrollListener(settingsNestedScrollview, settingsToolbar)
+//            setupMaterialScrollListener(settingsNestedScrollview, settingsToolbar)
         }
 
 //        checkWhatsNewDialog()

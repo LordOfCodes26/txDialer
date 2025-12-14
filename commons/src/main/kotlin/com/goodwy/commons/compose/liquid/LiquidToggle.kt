@@ -55,7 +55,7 @@ fun LiquidToggle(
 
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-    val dragWidth = with(density) { 20f.dp.toPx() }
+    val dragWidth = with(density) { 10f.dp.toPx() }
     val animationScope = rememberCoroutineScope()
 
     var didDrag by remember { mutableStateOf(false) }
@@ -136,7 +136,7 @@ fun LiquidToggle(
                         )
                     )
                 }
-                .size(54.dp, 28.dp)
+                .size(44.dp, 20.dp)
         )
 
         // THUMB
@@ -180,7 +180,7 @@ fun LiquidToggle(
                             blur(8.dp.toPx() * (1f - p))
                             lens(
                                 5.dp.toPx() * p,
-                                10.dp.toPx() * p,
+                                5.dp.toPx() * p,
                                 chromaticAberration = true
                             )
                         }
@@ -239,7 +239,7 @@ fun LiquidToggle(
                         )
                     }
                 )
-                .size(30.dp, 24.dp)
+                .size(30.dp, 16.dp)
         )
     }
 }
