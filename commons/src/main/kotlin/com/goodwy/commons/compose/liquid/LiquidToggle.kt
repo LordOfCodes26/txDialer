@@ -55,7 +55,7 @@ fun LiquidToggle(
 
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-    val dragWidth = with(density) { 10f.dp.toPx() }
+    val dragWidth = with(density) { 15f.dp.toPx() }
     val animationScope = rememberCoroutineScope()
 
     var didDrag by remember { mutableStateOf(false) }
@@ -239,7 +239,7 @@ fun LiquidToggle(
                         )
                     }
                 )
-                .size(30.dp, 16.dp)
+                .size(25.dp, 16.dp)
         )
     }
 }
